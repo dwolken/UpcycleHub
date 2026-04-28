@@ -16,7 +16,7 @@ function ProjectsPage() {
         Upcycling-Projekte
       </h1>
       <p className="max-w-2xl text-base leading-7 text-stone-600">
-        Hier werden spaeter die Upcycling-Projekte angezeigt.
+        Hier findest du eine Übersicht der Upcycling-Projekte.
       </p>
     </section>
   )
