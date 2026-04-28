@@ -74,6 +74,9 @@ function ProjectDetailPage() {
           <h1 className="text-3xl font-semibold text-stone-950 md:text-4xl">
             {project.title}
           </h1>
+          <p className="text-lg leading-8 text-stone-700">
+            {project.summary}
+          </p>
           <p className="text-base leading-7 text-stone-600">
             {project.description}
           </p>
@@ -88,8 +91,10 @@ function ProjectDetailPage() {
 
       <section className="grid gap-4 md:grid-cols-[1fr_2fr]">
         <div className="rounded-lg border border-stone-200 bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-stone-950">Materialien</h2>
-          <ul className="mt-4 space-y-2 text-sm text-stone-600">
+          <h2 className="text-lg font-semibold text-stone-950">
+            Benötigte Materialien
+          </h2>
+          <ul className="mt-4 list-disc space-y-2 pl-5 text-sm leading-6 text-stone-600 marker:text-emerald-700">
             {project.materials.map((material) => (
               <li key={material.id}>{material.name}</li>
             ))}
@@ -97,7 +102,9 @@ function ProjectDetailPage() {
         </div>
 
         <div className="rounded-lg border border-stone-200 bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-stone-950">Anleitung</h2>
+          <h2 className="text-lg font-semibold text-stone-950">
+            Anleitung
+          </h2>
           <ol className="mt-4 space-y-3 text-sm leading-6 text-stone-600">
             {project.steps.map((step) => (
               <li key={step.stepNumber} className="flex gap-3">

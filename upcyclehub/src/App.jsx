@@ -1,15 +1,32 @@
 import { Link } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { getProjects } from './api/projects.js'
+import ProjectCard from './components/ProjectCard.jsx'
+
+const selectedProjectIds = [1, 3, 4]
 
 function App() {
   const [previewProjects, setPreviewProjects] = useState([])
+  const [isLoadingPreview, setIsLoadingPreview] = useState(true)
 
   useEffect(() => {
     getProjects()
-      .then((projects) => setPreviewProjects(projects.slice(0, 3)))
+      .then((projects) => {
+        const selectedProjects = selectedProjectIds
+          .map((id) => projects.find((project) => project.id === id))
+          .filter(Boolean)
+
+        setPreviewProjects(
+          selectedProjects.length === selectedProjectIds.length
+            ? selectedProjects
+            : projects.slice(0, 3),
+        )
+      })
       .catch(() => setPreviewProjects([]))
+      .finally(() => setIsLoadingPreview(false))
   }, [])
+
+  const heroProject = previewProjects[0]
 
   return (
     <div className="space-y-10">
@@ -31,13 +48,29 @@ function App() {
           </Link>
         </div>
 
-        <div className="overflow-hidden rounded-lg border border-stone-200 bg-white shadow-sm">
-          <img
-            src="/project-images/kraeutertopf.svg"
-            alt="Kräutertopf aus Konservendose"
-            className="aspect-[4/3] w-full object-cover"
-          />
-        </div>
+        {heroProject ? (
+          <Link
+            to="/projects/$id"
+            params={{ id: String(heroProject.id) }}
+            className="group overflow-hidden rounded-lg border border-stone-200 bg-white shadow-sm"
+          >
+            <img
+              src={heroProject.imageUrl}
+              alt={heroProject.title}
+              className="aspect-[4/3] w-full object-cover transition duration-300 group-hover:scale-[1.02]"
+            />
+            <div className="border-t border-stone-200 p-4">
+              <p className="text-sm font-medium text-stone-950">
+                {heroProject.title}
+              </p>
+              <p className="mt-1 text-sm text-stone-500">
+                {heroProject.estimatedMinutes} Minuten
+              </p>
+            </div>
+          </Link>
+        ) : (
+          <div className="aspect-[4/3] rounded-lg border border-stone-200 bg-white shadow-sm" />
+        )}
       </section>
 
       <section className="grid gap-4 md:grid-cols-3">
@@ -72,57 +105,45 @@ function App() {
         </article>
       </section>
 
-      {previewProjects.length > 0 ? (
-        <section className="space-y-4">
-          <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-            <div>
-              <h2 className="text-2xl font-semibold text-stone-950">
-                Ausgewählte Projekte
-              </h2>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-stone-600">
-                Ein erster Blick auf Ideen, die vorhandene Materialien sinnvoll
-                weiterverwenden.
-              </p>
-            </div>
-            <Link
-              to="/projects"
-              className="text-sm font-medium text-emerald-700 hover:text-emerald-900"
-            >
-              Alle Projekte ansehen
-            </Link>
+      <section className="space-y-4">
+        <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+          <div>
+            <h2 className="text-2xl font-semibold text-stone-950">
+              Ausgewählte Projekte
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-stone-600">
+              Ein erster Blick auf Ideen, die vorhandene Materialien sinnvoll
+              weiterverwenden.
+            </p>
           </div>
+          <Link
+            to="/projects"
+            className="text-sm font-medium text-emerald-700 hover:text-emerald-900"
+          >
+            Alle Projekte ansehen
+          </Link>
+        </div>
 
+        {isLoadingPreview ? (
+          <p className="rounded-lg border border-stone-200 bg-white p-5 text-sm text-stone-600">
+            Projekte werden geladen.
+          </p>
+        ) : null}
+
+        {!isLoadingPreview && previewProjects.length > 0 ? (
           <div className="grid gap-4 md:grid-cols-3">
             {previewProjects.map((project) => (
-              <article
-                key={project.id}
-                className="overflow-hidden rounded-lg border border-stone-200 bg-white shadow-sm"
-              >
-                <img
-                  src={project.imageUrl}
-                  alt={project.title}
-                  className="aspect-[4/3] w-full object-cover"
-                />
-                <div className="p-5">
-                  <h3 className="text-lg font-semibold text-stone-950">
-                    {project.title}
-                  </h3>
-                  <p className="mt-2 text-sm leading-6 text-stone-600">
-                    {project.summary}
-                  </p>
-                  <Link
-                    to="/projects/$id"
-                    params={{ id: String(project.id) }}
-                    className="mt-4 inline-flex text-sm font-medium text-emerald-700 hover:text-emerald-900"
-                  >
-                    Details ansehen
-                  </Link>
-                </div>
-              </article>
+              <ProjectCard key={project.id} project={project} />
             ))}
           </div>
-        </section>
-      ) : null}
+        ) : null}
+
+        {!isLoadingPreview && previewProjects.length === 0 ? (
+          <p className="rounded-lg border border-stone-200 bg-white p-5 text-sm text-stone-600">
+            Ausgewählte Projekte konnten nicht geladen werden.
+          </p>
+        ) : null}
+      </section>
     </div>
   )
 }

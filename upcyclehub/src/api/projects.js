@@ -1,4 +1,24 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
+const API_ORIGIN = API_BASE_URL.replace(/\/api\/?$/, '')
+
+function resolveImageUrl(imageUrl) {
+  if (!imageUrl || imageUrl.startsWith('http')) {
+    return imageUrl
+  }
+
+  return `${API_ORIGIN}${imageUrl.startsWith('/') ? imageUrl : `/${imageUrl}`}`
+}
+
+function normalizeProject(project) {
+  if (!project) {
+    return project
+  }
+
+  return {
+    ...project,
+    imageUrl: resolveImageUrl(project.imageUrl),
+  }
+}
 
 async function request(path) {
   const response = await fetch(`${API_BASE_URL}${path}`)
@@ -8,7 +28,9 @@ async function request(path) {
   }
 
   const result = await response.json()
-  return result.data
+  return Array.isArray(result.data)
+    ? result.data.map((project) => normalizeProject(project))
+    : normalizeProject(result.data)
 }
 
 export function getProjects(filters = {}) {

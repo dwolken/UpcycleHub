@@ -88,9 +88,20 @@ router.get('/', (req, res) => {
   }
 
   if (q) {
-    conditions.push(
-      '(LOWER(p.p_title) LIKE LOWER(@search) OR LOWER(p.p_description) LIKE LOWER(@search))',
-    )
+    conditions.push(`
+      (
+        LOWER(p.p_title) LIKE LOWER(@search)
+        OR LOWER(p.p_summary) LIKE LOWER(@search)
+        OR LOWER(p.p_description) LIKE LOWER(@search)
+        OR EXISTS (
+          SELECT 1
+          FROM project_materials pm_search
+          JOIN materials m_search ON m_search.m_id = pm_search.pm_m_id
+          WHERE pm_search.pm_p_id = p.p_id
+            AND LOWER(m_search.m_name) LIKE LOWER(@search)
+        )
+      )
+    `)
     params.search = `%${q}%`
   }
 
