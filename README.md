@@ -1,6 +1,6 @@
 # UpcycleHub
 
-UpcycleHub ist eine Webanwendung für nachhaltige Upcycling-Projekte und Anleitungen. Die Anwendung zeigt Ideen zur Wiederverwendung von Materialien und Gegenständen und soll dazu beitragen, Abfall zu reduzieren.
+UpcycleHub ist eine Webanwendung für nachhaltige Upcycling-Projekte und Anleitungen. Die Anwendung bündelt Ideen zur Wiederverwendung von Materialien und Gegenständen und unterstützt einen bewussteren Umgang mit Ressourcen.
 
 ## Technologien
 
@@ -11,7 +11,7 @@ UpcycleHub ist eine Webanwendung für nachhaltige Upcycling-Projekte und Anleitu
 
 ## Features
 
-- Startseite mit kurzer Einführung in UpcycleHub
-- Navigation zwischen den Seiten mit Routing
+- Startseite mit Einführung in UpcycleHub
+- Navigation zwischen den Hauptbereichen
 - Übersicht von Upcycling-Projekten
-- Darstellung der Projekte in einzelnen Projektkarten
+- Projektkarten mit zentralen Informationen
