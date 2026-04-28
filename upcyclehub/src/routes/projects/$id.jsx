@@ -8,6 +8,10 @@ export const Route = createFileRoute('/projects/$id')({
   component: ProjectDetailPage,
 })
 
+function formatMaterialAmount(material) {
+  return [material.amount, material.unit].filter(Boolean).join(' ')
+}
+
 function ProjectDetailPage() {
   const { id } = Route.useParams()
   const [project, setProject] = useState(null)
@@ -52,13 +56,19 @@ function ProjectDetailPage() {
     <article className="space-y-8">
       <Link
         to="/projects"
-        className="text-sm font-medium text-emerald-700 hover:text-emerald-900"
+        className="inline-flex text-sm font-medium text-emerald-700 hover:text-emerald-900"
       >
         Zurück zur Übersicht
       </Link>
 
-      <section className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr] lg:items-start">
-        <div className="space-y-5">
+      <section className="overflow-hidden rounded-lg border border-stone-200 bg-white shadow-sm">
+        <img
+          src={project.imageUrl}
+          alt={project.title}
+          className="aspect-[16/9] w-full object-cover"
+        />
+
+        <div className="space-y-5 p-6 md:p-8">
           <div className="flex flex-wrap gap-2 text-xs font-medium">
             <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-800">
               {project.category.name}
@@ -71,51 +81,71 @@ function ProjectDetailPage() {
             </span>
           </div>
 
-          <h1 className="text-3xl font-semibold text-stone-950 md:text-4xl">
-            {project.title}
-          </h1>
-          <p className="text-lg leading-8 text-stone-700">
-            {project.summary}
-          </p>
-          <p className="text-base leading-7 text-stone-600">
-            {project.description}
-          </p>
+          <div className="max-w-3xl space-y-3">
+            <h1 className="text-3xl font-semibold text-stone-950 md:text-4xl">
+              {project.title}
+            </h1>
+            <p className="text-lg leading-8 text-stone-700">
+              {project.summary}
+            </p>
+          </div>
         </div>
-
-        <img
-          src={project.imageUrl}
-          alt={project.title}
-          className="aspect-[4/3] w-full rounded-lg border border-stone-200 object-cover shadow-sm"
-        />
       </section>
 
-      <section className="grid gap-4 md:grid-cols-[1fr_2fr]">
-        <div className="rounded-lg border border-stone-200 bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-stone-950">
+      <section className="rounded-lg border border-stone-200 bg-white p-6 shadow-sm md:p-7">
+        <h2 className="text-xl font-semibold text-stone-950">Projektidee</h2>
+        <p className="mt-3 max-w-3xl text-base leading-7 text-stone-600">
+          {project.description}
+        </p>
+      </section>
+
+      <section className="grid gap-6 lg:grid-cols-[0.9fr_1.4fr]">
+        <section className="rounded-lg border border-stone-200 bg-white p-6 shadow-sm">
+          <h2 className="text-xl font-semibold text-stone-950">
             Benötigte Materialien
           </h2>
-          <ul className="mt-4 list-disc space-y-2 pl-5 text-sm leading-6 text-stone-600 marker:text-emerald-700">
+          <ul className="mt-5 space-y-3">
             {project.materials.map((material) => (
-              <li key={material.id}>{material.name}</li>
+              <li
+                key={material.id}
+                className="grid gap-3 rounded-md border border-stone-200 bg-stone-50 p-3 sm:grid-cols-[5.5rem_1fr]"
+              >
+                <span className="text-sm font-semibold text-emerald-800">
+                  {formatMaterialAmount(material) || 'nach Bedarf'}
+                </span>
+                <span>
+                  <span className="block text-sm font-medium text-stone-950">
+                    {material.name}
+                  </span>
+                  {material.note ? (
+                    <span className="mt-1 block text-sm leading-5 text-stone-600">
+                      {material.note}
+                    </span>
+                  ) : null}
+                </span>
+              </li>
             ))}
           </ul>
-        </div>
+        </section>
 
-        <div className="rounded-lg border border-stone-200 bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-stone-950">
-            Anleitung
+        <section className="rounded-lg border border-stone-200 bg-white p-6 shadow-sm">
+          <h2 className="text-xl font-semibold text-stone-950">
+            Schritt-für-Schritt
           </h2>
-          <ol className="mt-4 space-y-3 text-sm leading-6 text-stone-600">
+          <ol className="mt-5 space-y-4">
             {project.steps.map((step) => (
-              <li key={step.stepNumber} className="flex gap-3">
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-sm font-semibold text-emerald-800">
+              <li
+                key={step.stepNumber}
+                className="flex gap-4 rounded-md border border-stone-200 bg-white p-4"
+              >
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-sm font-semibold text-emerald-800">
                   {step.stepNumber}
                 </span>
-                <span>{step.text}</span>
+                <p className="text-sm leading-6 text-stone-600">{step.text}</p>
               </li>
             ))}
           </ol>
-        </div>
+        </section>
       </section>
     </article>
   )

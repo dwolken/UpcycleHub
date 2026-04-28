@@ -52,6 +52,9 @@ CREATE TABLE project_materials (
   pm_id INTEGER PRIMARY KEY AUTOINCREMENT,
   pm_p_id INTEGER NOT NULL,
   pm_m_id INTEGER NOT NULL,
+  pm_amount TEXT,
+  pm_unit TEXT,
+  pm_note TEXT,
   FOREIGN KEY (pm_p_id) REFERENCES projects (p_id) ON DELETE CASCADE,
   FOREIGN KEY (pm_m_id) REFERENCES materials (m_id),
   UNIQUE (pm_p_id, pm_m_id)

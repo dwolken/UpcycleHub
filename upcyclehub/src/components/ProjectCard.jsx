@@ -2,12 +2,14 @@ import { Link } from '@tanstack/react-router'
 
 function ProjectCard({ project }) {
   return (
-    <article className="flex h-full flex-col overflow-hidden rounded-lg border border-stone-200 bg-white shadow-sm">
-      <img
-        src={project.imageUrl}
-        alt={project.title}
-        className="aspect-[4/3] w-full object-cover"
-      />
+    <article className="group flex h-full flex-col overflow-hidden rounded-lg border border-stone-200 bg-white shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md">
+      <div className="overflow-hidden">
+        <img
+          src={project.imageUrl}
+          alt={project.title}
+          className="aspect-[4/3] w-full object-cover transition duration-300 group-hover:scale-[1.03]"
+        />
+      </div>
 
       <div className="flex flex-1 flex-col p-5">
         <div className="flex flex-wrap gap-2 text-xs font-medium">

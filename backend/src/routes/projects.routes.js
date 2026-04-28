@@ -7,11 +7,16 @@ function getMaterials(projectId) {
   return db
     .prepare(
       `
-      SELECT m.m_id AS id, m.m_name AS name
+      SELECT
+        m.m_id AS id,
+        m.m_name AS name,
+        pm.pm_amount AS amount,
+        pm.pm_unit AS unit,
+        pm.pm_note AS note
       FROM project_materials pm
       JOIN materials m ON m.m_id = pm.pm_m_id
       WHERE pm.pm_p_id = ?
-      ORDER BY m.m_name
+      ORDER BY pm.pm_id
       `,
     )
     .all(projectId)
