@@ -48,7 +48,7 @@ INSERT INTO projects (
     'Eine gereinigte Konservendose wird zu einem kleinen Topf für Küchenkräuter.',
     'Aus einer leeren Konservendose entsteht mit wenigen Handgriffen ein einfacher Kräutertopf. Das Projekt eignet sich gut für Fensterbank oder Balkon und zeigt, wie Verpackungen sinnvoll weiterverwendet werden können.',
     30,
-    NULL,
+    '/project-images/kraeutertopf.svg',
     '2026-04-28 10:10:00',
     '2026-04-28 10:10:00'
   ),
@@ -62,7 +62,7 @@ INSERT INTO projects (
     'Ein gebrauchtes Glas wird zu einem schlichten Stiftehalter für den Schreibtisch.',
     'Ein leeres Marmeladenglas lässt sich schnell reinigen und als Stiftehalter nutzen. Mit etwas Schnur oder Stoff wirkt es ordentlicher und passt gut auf den Arbeitsplatz.',
     20,
-    NULL,
+    '/project-images/stiftehalter.svg',
     '2026-04-28 10:15:00',
     '2026-04-28 10:15:00'
   ),
@@ -76,7 +76,7 @@ INSERT INTO projects (
     'Eine alte Holzkiste wird zu einem einfachen Regal für kleine Gegenstände.',
     'Eine gebrauchte Holzkiste kann gereinigt, abgeschliffen und als kleines Wandregal eingesetzt werden. Das Projekt verbindet Wiederverwendung mit praktischer Ordnung im Wohnbereich.',
     75,
-    NULL,
+    '/project-images/wandregal.svg',
     '2026-04-28 10:20:00',
     '2026-04-28 10:20:00'
   ),
@@ -90,7 +90,7 @@ INSERT INTO projects (
     'Aus einem alten T-Shirt entsteht eine wiederverwendbare Einkaufstasche.',
     'Ein aussortiertes T-Shirt kann zu einer einfachen Tasche umfunktioniert werden. Dadurch bekommt ein altes Kleidungsstück eine neue Aufgabe und Plastiktaschen werden vermieden.',
     45,
-    NULL,
+    '/project-images/einkaufstasche.svg',
     '2026-04-28 10:25:00',
     '2026-04-28 10:25:00'
   ),
@@ -104,7 +104,7 @@ INSERT INTO projects (
     'Eine leere Glasflasche wird zu einem ruhigen Kerzenhalter für den Tisch.',
     'Eine schöne Glasflasche kann als schlichter Kerzenhalter weiterverwendet werden. Das Projekt funktioniert besonders gut mit stabilen Flaschen und einer passenden Kerze.',
     35,
-    NULL,
+    '/project-images/kerzenhalter.svg',
     '2026-04-28 10:30:00',
     '2026-04-28 10:30:00'
   ),
@@ -118,7 +118,7 @@ INSERT INTO projects (
     'Stabiler Karton wird zu einer kleinen Box für Notizen und Zubehör.',
     'Aus Karton und Pappe entsteht eine einfache Box für den Schreibtisch. Sie hilft beim Sortieren kleiner Dinge und nutzt Material, das sonst oft direkt entsorgt wird.',
     40,
-    NULL,
+    '/project-images/schreibtischbox.svg',
     '2026-04-28 10:35:00',
     '2026-04-28 10:35:00'
   );

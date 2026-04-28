@@ -2,10 +2,10 @@
 
 import { createFileRoute } from '@tanstack/react-router'
 import { useEffect, useMemo, useState } from 'react'
-import { getProjects } from '../api/projects.js'
-import ProjectCard from '../components/ProjectCard.jsx'
+import { getProjects } from '../../api/projects.js'
+import ProjectCard from '../../components/ProjectCard.jsx'
 
-export const Route = createFileRoute('/projects')({
+export const Route = createFileRoute('/projects/')({
   component: ProjectsPage,
 })
 
@@ -51,7 +51,13 @@ function ProjectsPage() {
   )
   const materials = useMemo(
     () =>
-      [...new Set(allProjects.flatMap((project) => project.materials.map((material) => material.name)))].sort(),
+      [
+        ...new Set(
+          allProjects.flatMap((project) =>
+            project.materials.map((material) => material.name),
+          ),
+        ),
+      ].sort(),
     [allProjects],
   )
 
@@ -116,7 +122,9 @@ function ProjectsPage() {
             Schwierigkeit
             <select
               value={filters.difficulty}
-              onChange={(event) => updateFilter('difficulty', event.target.value)}
+              onChange={(event) =>
+                updateFilter('difficulty', event.target.value)
+              }
               className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm font-normal text-stone-900 outline-none transition focus:border-emerald-600"
             >
               <option value="">Alle Stufen</option>

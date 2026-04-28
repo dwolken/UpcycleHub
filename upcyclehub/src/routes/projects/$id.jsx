@@ -2,7 +2,7 @@
 
 import { Link, createFileRoute } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
-import { getProject } from '../api/projects.js'
+import { getProject } from '../../api/projects.js'
 
 export const Route = createFileRoute('/projects/$id')({
   component: ProjectDetailPage,
@@ -32,10 +32,12 @@ function ProjectDetailPage() {
     )
   }
 
-  if (error) {
+  if (error || !project) {
     return (
       <div className="space-y-4 rounded-lg border border-stone-200 bg-white p-5">
-        <p className="text-sm text-stone-600">{error}</p>
+        <p className="text-sm text-stone-600">
+          {error || 'Das Projekt wurde nicht gefunden.'}
+        </p>
         <Link
           to="/projects"
           className="text-sm font-medium text-emerald-700 hover:text-emerald-900"
@@ -55,25 +57,33 @@ function ProjectDetailPage() {
         Zurück zur Übersicht
       </Link>
 
-      <section className="space-y-5">
-        <div className="flex flex-wrap gap-2 text-xs font-medium">
-          <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-800">
-            {project.category.name}
-          </span>
-          <span className="rounded-full bg-stone-100 px-3 py-1 text-stone-700">
-            {project.difficulty.name}
-          </span>
-          <span className="rounded-full bg-stone-100 px-3 py-1 text-stone-700">
-            {project.estimatedMinutes} Minuten
-          </span>
+      <section className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr] lg:items-start">
+        <div className="space-y-5">
+          <div className="flex flex-wrap gap-2 text-xs font-medium">
+            <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-800">
+              {project.category.name}
+            </span>
+            <span className="rounded-full bg-stone-100 px-3 py-1 text-stone-700">
+              {project.difficulty.name}
+            </span>
+            <span className="rounded-full bg-stone-100 px-3 py-1 text-stone-700">
+              {project.estimatedMinutes} Minuten
+            </span>
+          </div>
+
+          <h1 className="text-3xl font-semibold text-stone-950 md:text-4xl">
+            {project.title}
+          </h1>
+          <p className="text-base leading-7 text-stone-600">
+            {project.description}
+          </p>
         </div>
 
-        <h1 className="max-w-3xl text-3xl font-semibold text-stone-950 md:text-4xl">
-          {project.title}
-        </h1>
-        <p className="max-w-3xl text-base leading-7 text-stone-600">
-          {project.description}
-        </p>
+        <img
+          src={project.imageUrl}
+          alt={project.title}
+          className="aspect-[4/3] w-full rounded-lg border border-stone-200 object-cover shadow-sm"
+        />
       </section>
 
       <section className="grid gap-4 md:grid-cols-[1fr_2fr]">
