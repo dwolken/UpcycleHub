@@ -1,5 +1,8 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
-const API_ORIGIN = API_BASE_URL.replace(/\/api\/?$/, '')
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api'
+const API_ORIGIN = API_BASE_URL.startsWith('http')
+  ? API_BASE_URL.replace(/\/api\/?$/, '')
+  : ''
+const REQUEST_TIMEOUT_MS = 8000
 
 function resolveImageUrl(imageUrl) {
   if (!imageUrl || imageUrl.startsWith('http')) {
@@ -21,7 +24,15 @@ function normalizeProject(project) {
 }
 
 async function request(path) {
-  const response = await fetch(`${API_BASE_URL}${path}`)
+  const controller = new AbortController()
+  const timeoutId = window.setTimeout(
+    () => controller.abort(),
+    REQUEST_TIMEOUT_MS,
+  )
+
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    signal: controller.signal,
+  }).finally(() => window.clearTimeout(timeoutId))
 
   if (!response.ok) {
     throw new Error('Daten konnten nicht geladen werden.')
