@@ -56,8 +56,8 @@ function RootLayoutContent() {
             </div>
           </div>
 
-          <nav className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
-            <div className="flex flex-wrap gap-2">
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
+            <nav className="flex flex-wrap gap-2">
               <Link
                 to="/"
                 className={linkClassName}
@@ -73,44 +73,44 @@ function RootLayoutContent() {
               >
                 Projekte
               </Link>
-            </div>
+            </nav>
 
-            {!isLoading && !isAuthenticated ? (
-              <div className="flex flex-wrap gap-2 sm:border-l sm:border-stone-200 sm:pl-3">
-                <Link
-                  to="/login"
-                  className={loginLinkClassName}
-                  activeProps={{ className: `${loginLinkClassName} bg-emerald-800` }}
-                >
-                  Anmelden
-                </Link>
+            {!isLoading ? (
+              <div className="flex flex-wrap items-center gap-2 border-t border-stone-200 pt-3 sm:border-l sm:border-t-0 sm:pl-3 sm:pt-0">
+                {!isAuthenticated ? (
+                  <Link
+                    to="/login"
+                    className={loginLinkClassName}
+                    activeProps={{ className: `${loginLinkClassName} bg-emerald-800` }}
+                  >
+                    Anmelden
+                  </Link>
+                ) : null}
+
+                {isAuthenticated ? (
+                  <>
+                    <Link
+                      to="/my-projects"
+                      className={accountLinkClassName}
+                      activeProps={{ className: `${accountLinkClassName} bg-emerald-100 text-emerald-950` }}
+                    >
+                      Meine Projekte
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={handleLogout}
+                      className={buttonClassName}
+                    >
+                      Abmelden
+                    </button>
+                    <span className="w-fit rounded-full border border-stone-200 bg-stone-50 px-3 py-1.5 text-xs font-semibold text-stone-600">
+                      {user.username}
+                    </span>
+                  </>
+                ) : null}
               </div>
             ) : null}
-
-            {!isLoading && isAuthenticated ? (
-              <>
-                <div className="flex flex-wrap items-center gap-2 border-t border-stone-200 pt-3 sm:border-l sm:border-t-0 sm:pl-3 sm:pt-0">
-                  <Link
-                    to="/my-projects"
-                    className={accountLinkClassName}
-                    activeProps={{ className: `${accountLinkClassName} bg-emerald-100 text-emerald-950` }}
-                  >
-                    Meine Projekte
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={handleLogout}
-                    className={buttonClassName}
-                  >
-                    Abmelden
-                  </button>
-                </div>
-                <span className="w-fit rounded-full border border-stone-200 bg-stone-50 px-3 py-1.5 text-xs font-semibold text-stone-600">
-                  {user.username}
-                </span>
-              </>
-            ) : null}
-          </nav>
+          </div>
         </div>
       </header>
 
