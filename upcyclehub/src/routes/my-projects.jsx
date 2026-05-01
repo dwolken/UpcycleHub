@@ -34,7 +34,7 @@ function MyProjectsPage() {
   if (isLoading) {
     return (
       <p className="rounded-lg border border-stone-200 bg-white p-5 text-sm text-stone-600">
-        Anmeldung wird geprueft.
+        Anmeldung wird geprüft.
       </p>
     )
   }

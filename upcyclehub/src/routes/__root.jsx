@@ -18,6 +18,8 @@ function RootLayout() {
   const { isAuthenticated, isLoading, logout, user } = useAuth()
   const linkClassName =
     'rounded-md px-3 py-2 text-sm font-medium text-stone-600 transition hover:bg-stone-100 hover:text-stone-950'
+  const loginLinkClassName =
+    'rounded-md bg-emerald-700 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-800'
   const buttonClassName =
     'rounded-md px-3 py-2 text-sm font-medium text-stone-600 transition hover:bg-stone-100 hover:text-stone-950'
 
@@ -61,22 +63,13 @@ function RootLayout() {
               Projekte
             </Link>
             {!isLoading && !isAuthenticated ? (
-              <>
-                <Link
-                  to="/login"
-                  className={linkClassName}
-                  activeProps={{ className: `${linkClassName} bg-emerald-50 text-emerald-800` }}
-                >
-                  Anmelden
-                </Link>
-                <Link
-                  to="/register"
-                  className={linkClassName}
-                  activeProps={{ className: `${linkClassName} bg-emerald-50 text-emerald-800` }}
-                >
-                  Registrieren
-                </Link>
-              </>
+              <Link
+                to="/login"
+                className={loginLinkClassName}
+                activeProps={{ className: `${loginLinkClassName} bg-emerald-800` }}
+              >
+                Anmelden
+              </Link>
             ) : null}
             {!isLoading && isAuthenticated ? (
               <>

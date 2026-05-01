@@ -92,7 +92,7 @@ function LoginPage() {
           disabled={isSubmitting}
           className="w-full rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-stone-300"
         >
-          {isSubmitting ? 'Anmeldung laeuft' : 'Anmelden'}
+          {isSubmitting ? 'Anmeldung läuft' : 'Anmelden'}
         </button>
       </form>
 

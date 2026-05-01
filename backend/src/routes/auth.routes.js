@@ -4,6 +4,14 @@ const db = require('../db')
 
 const router = express.Router()
 
+function sendData(res, data, status = 200) {
+  return res.status(status).json({ data })
+}
+
+function sendError(res, message, status) {
+  return res.status(status).json({ message })
+}
+
 function mapUser(row) {
   return {
     id: row.u_id,
@@ -53,12 +61,12 @@ router.post('/register', async (req, res, next) => {
 
     const usernameError = validateUsername(username)
     if (usernameError) {
-      return res.status(400).json({ message: usernameError })
+      return sendError(res, usernameError, 400)
     }
 
     const passwordError = validatePassword(password)
     if (passwordError) {
-      return res.status(400).json({ message: passwordError })
+      return sendError(res, passwordError, 400)
     }
 
     const existingUser = db
@@ -66,9 +74,7 @@ router.post('/register', async (req, res, next) => {
       .get(username)
 
     if (existingUser) {
-      return res.status(409).json({
-        message: 'Dieser Benutzername ist bereits vergeben.',
-      })
+      return sendError(res, 'Benutzername bereits vergeben.', 409)
     }
 
     const passwordHash = await bcrypt.hash(password, 10)
@@ -93,9 +99,7 @@ router.post('/register', async (req, res, next) => {
 
     await setLoggedInUser(req, user.u_id)
 
-    return res.status(201).json({
-      data: mapUser(user),
-    })
+    return sendData(res, mapUser(user), 201)
   } catch (error) {
     return next(error)
   }
@@ -107,9 +111,7 @@ router.post('/login', async (req, res, next) => {
     const password = String(req.body?.password || '')
 
     if (!username || !password) {
-      return res.status(400).json({
-        message: 'Benutzername und Passwort sind erforderlich.',
-      })
+      return sendError(res, 'Benutzername und Passwort sind erforderlich.', 400)
     }
 
     const user = db
@@ -123,16 +125,12 @@ router.post('/login', async (req, res, next) => {
       .get(username)
 
     if (!user || !(await bcrypt.compare(password, user.u_password_hash))) {
-      return res.status(401).json({
-        message: 'Benutzername oder Passwort ist falsch.',
-      })
+      return sendError(res, 'Benutzername oder Passwort ist falsch.', 401)
     }
 
     await setLoggedInUser(req, user.u_id)
 
-    return res.json({
-      data: mapUser(user),
-    })
+    return sendData(res, mapUser(user))
   } catch (error) {
     return next(error)
   }
@@ -140,7 +138,7 @@ router.post('/login', async (req, res, next) => {
 
 router.post('/logout', (req, res, next) => {
   if (!req.session) {
-    return res.json({ data: null })
+    return sendData(res, null)
   }
 
   return req.session.destroy((error) => {
@@ -149,13 +147,13 @@ router.post('/logout', (req, res, next) => {
     }
 
     res.clearCookie('upcyclehub.sid')
-    return res.json({ data: null })
+    return sendData(res, null)
   })
 })
 
 router.get('/me', (req, res) => {
   if (!req.session?.userId) {
-    return res.json({ data: null })
+    return sendData(res, null)
   }
 
   const user = db
@@ -170,12 +168,10 @@ router.get('/me', (req, res) => {
 
   if (!user) {
     req.session.userId = null
-    return res.json({ data: null })
+    return sendData(res, null)
   }
 
-  return res.json({
-    data: mapUser(user),
-  })
+  return sendData(res, mapUser(user))
 })
 
 module.exports = router

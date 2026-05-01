@@ -23,7 +23,21 @@ function normalizeProject(project) {
   }
 }
 
-async function request(path) {
+async function readJsonResponse(response) {
+  const text = await response.text()
+
+  if (!text) {
+    throw new Error('Daten konnten nicht geladen werden.')
+  }
+
+  try {
+    return JSON.parse(text)
+  } catch {
+    throw new Error('Daten konnten nicht geladen werden.')
+  }
+}
+
+async function request(path, options = {}) {
   const controller = new AbortController()
   const timeoutId = window.setTimeout(
     () => controller.abort(),
@@ -32,14 +46,15 @@ async function request(path) {
 
   const response = await fetch(`${API_BASE_URL}${path}`, {
     signal: controller.signal,
-    credentials: 'include',
+    ...options,
   }).finally(() => window.clearTimeout(timeoutId))
 
+  const result = await readJsonResponse(response)
+
   if (!response.ok) {
-    throw new Error('Daten konnten nicht geladen werden.')
+    throw new Error(result.message || 'Daten konnten nicht geladen werden.')
   }
 
-  const result = await response.json()
   return Array.isArray(result.data)
     ? result.data.map((project) => normalizeProject(project))
     : normalizeProject(result.data)
@@ -63,5 +78,7 @@ export function getProject(id) {
 }
 
 export function getMyProjects() {
-  return request('/projects/mine')
+  return request('/projects/mine', {
+    credentials: 'include',
+  })
 }

@@ -36,7 +36,7 @@ function RegisterPage() {
     }
 
     if (formData.password !== formData.passwordConfirmation) {
-      return 'Die Passwoerter stimmen nicht ueberein.'
+      return 'Die Passwörter stimmen nicht überein.'
     }
 
     return ''
@@ -103,7 +103,7 @@ function RegisterPage() {
         </label>
 
         <label className="block space-y-2 text-sm font-medium text-stone-700">
-          Passwort bestaetigen
+          Passwort bestätigen
           <input
             type="password"
             value={formData.passwordConfirmation}
@@ -126,7 +126,7 @@ function RegisterPage() {
           disabled={isSubmitting}
           className="w-full rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-stone-300"
         >
-          {isSubmitting ? 'Registrierung laeuft' : 'Registrieren'}
+          {isSubmitting ? 'Registrierung läuft' : 'Registrieren'}
         </button>
       </form>
 
