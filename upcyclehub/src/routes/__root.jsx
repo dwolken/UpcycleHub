@@ -28,8 +28,10 @@ function RootLayoutContent() {
     'rounded-md px-3 py-2 text-sm font-medium text-stone-600 transition hover:bg-stone-100 hover:text-stone-950'
   const loginLinkClassName =
     'rounded-md bg-emerald-700 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-800'
+  const accountLinkClassName =
+    'rounded-md px-3 py-2 text-sm font-medium text-emerald-800 transition hover:bg-emerald-50 hover:text-emerald-950'
   const buttonClassName =
-    'rounded-md px-3 py-2 text-sm font-medium text-stone-600 transition hover:bg-stone-100 hover:text-stone-950'
+    'rounded-md border border-stone-300 bg-white px-3 py-2 text-sm font-medium text-stone-700 transition hover:border-stone-400 hover:bg-stone-50 hover:text-stone-950'
 
   async function handleLogout() {
     await logout()
@@ -54,40 +56,46 @@ function RootLayoutContent() {
             </div>
           </div>
 
-          <nav className="flex flex-wrap gap-2">
-            <Link
-              to="/"
-              className={linkClassName}
-              activeOptions={{ exact: true }}
-              activeProps={{ className: `${linkClassName} bg-emerald-50 text-emerald-800` }}
-            >
-              Start
-            </Link>
-            <Link
-              to="/projects"
-              className={linkClassName}
-              activeProps={{ className: `${linkClassName} bg-emerald-50 text-emerald-800` }}
-            >
-              Projekte
-            </Link>
-            {!isLoading && !isAuthenticated ? (
+          <nav className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
+            <div className="flex flex-wrap gap-2">
               <Link
-                to="/login"
-                className={loginLinkClassName}
-                activeProps={{ className: `${loginLinkClassName} bg-emerald-800` }}
+                to="/"
+                className={linkClassName}
+                activeOptions={{ exact: true }}
+                activeProps={{ className: `${linkClassName} bg-emerald-50 text-emerald-800` }}
               >
-                Anmelden
+                Start
               </Link>
+              <Link
+                to="/projects"
+                className={linkClassName}
+                activeProps={{ className: `${linkClassName} bg-emerald-50 text-emerald-800` }}
+              >
+                Projekte
+              </Link>
+            </div>
+
+            {!isLoading && !isAuthenticated ? (
+              <div className="flex flex-wrap gap-2 sm:border-l sm:border-stone-200 sm:pl-3">
+                <Link
+                  to="/login"
+                  className={loginLinkClassName}
+                  activeProps={{ className: `${loginLinkClassName} bg-emerald-800` }}
+                >
+                  Anmelden
+                </Link>
+              </div>
             ) : null}
+
             {!isLoading && isAuthenticated ? (
-              <>
-                <span className="px-3 py-2 text-sm font-medium text-stone-700">
+              <div className="flex flex-wrap items-center gap-2 rounded-lg border border-stone-200 bg-stone-50 p-1">
+                <span className="rounded-md bg-white px-3 py-2 text-sm font-semibold text-stone-800 shadow-sm">
                   {user.username}
                 </span>
                 <Link
                   to="/my-projects"
-                  className={linkClassName}
-                  activeProps={{ className: `${linkClassName} bg-emerald-50 text-emerald-800` }}
+                  className={accountLinkClassName}
+                  activeProps={{ className: `${accountLinkClassName} bg-emerald-100 text-emerald-950` }}
                 >
                   Meine Projekte
                 </Link>
@@ -98,7 +106,7 @@ function RootLayoutContent() {
                 >
                   Abmelden
                 </button>
-              </>
+              </div>
             ) : null}
           </nav>
         </div>
