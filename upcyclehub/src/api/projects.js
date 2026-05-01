@@ -32,6 +32,7 @@ async function request(path) {
 
   const response = await fetch(`${API_BASE_URL}${path}`, {
     signal: controller.signal,
+    credentials: 'include',
   }).finally(() => window.clearTimeout(timeoutId))
 
   if (!response.ok) {
@@ -59,4 +60,8 @@ export function getProjects(filters = {}) {
 
 export function getProject(id) {
   return request(`/projects/${id}`)
+}
+
+export function getMyProjects() {
+  return request('/projects/mine')
 }

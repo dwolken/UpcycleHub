@@ -3,8 +3,10 @@
 import {
   Link,
   Outlet,
+  useNavigate,
   createRootRoute,
 } from '@tanstack/react-router'
+import { useAuth } from '../auth/AuthContext.jsx'
 import AppIcon from '../components/AppIcon.jsx'
 
 export const Route = createRootRoute({
@@ -12,8 +14,17 @@ export const Route = createRootRoute({
 })
 
 function RootLayout() {
+  const navigate = useNavigate()
+  const { isAuthenticated, isLoading, logout, user } = useAuth()
   const linkClassName =
     'rounded-md px-3 py-2 text-sm font-medium text-stone-600 transition hover:bg-stone-100 hover:text-stone-950'
+  const buttonClassName =
+    'rounded-md px-3 py-2 text-sm font-medium text-stone-600 transition hover:bg-stone-100 hover:text-stone-950'
+
+  async function handleLogout() {
+    await logout()
+    await navigate({ to: '/' })
+  }
 
   return (
     <div className="min-h-screen bg-stone-50 text-stone-900">
@@ -33,7 +44,7 @@ function RootLayout() {
             </div>
           </div>
 
-          <nav className="flex gap-2">
+          <nav className="flex flex-wrap gap-2">
             <Link
               to="/"
               className={linkClassName}
@@ -49,6 +60,45 @@ function RootLayout() {
             >
               Projekte
             </Link>
+            {!isLoading && !isAuthenticated ? (
+              <>
+                <Link
+                  to="/login"
+                  className={linkClassName}
+                  activeProps={{ className: `${linkClassName} bg-emerald-50 text-emerald-800` }}
+                >
+                  Anmelden
+                </Link>
+                <Link
+                  to="/register"
+                  className={linkClassName}
+                  activeProps={{ className: `${linkClassName} bg-emerald-50 text-emerald-800` }}
+                >
+                  Registrieren
+                </Link>
+              </>
+            ) : null}
+            {!isLoading && isAuthenticated ? (
+              <>
+                <span className="px-3 py-2 text-sm font-medium text-stone-700">
+                  {user.username}
+                </span>
+                <Link
+                  to="/my-projects"
+                  className={linkClassName}
+                  activeProps={{ className: `${linkClassName} bg-emerald-50 text-emerald-800` }}
+                >
+                  Meine Projekte
+                </Link>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className={buttonClassName}
+                >
+                  Abmelden
+                </button>
+              </>
+            ) : null}
           </nav>
         </div>
       </header>

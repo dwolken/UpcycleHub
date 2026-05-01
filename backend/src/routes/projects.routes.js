@@ -1,5 +1,6 @@
 const express = require('express')
 const db = require('../db')
+const requireAuth = require('../middleware/requireAuth')
 
 const router = express.Router()
 
@@ -137,6 +138,38 @@ router.get('/', (req, res) => {
       `,
     )
     .all(params)
+
+  res.json({
+    data: rows.map((row) => mapProject(row)),
+  })
+})
+
+router.get('/mine', requireAuth, (req, res) => {
+  const rows = db
+    .prepare(
+      `
+      SELECT
+        p.p_id AS id,
+        p.p_title AS title,
+        p.p_slug AS slug,
+        p.p_summary AS summary,
+        p.p_description AS description,
+        p.p_estimated_minutes AS estimatedMinutes,
+        p.p_image_url AS imageUrl,
+        p.p_created_at AS createdAt,
+        p.p_updated_at AS updatedAt,
+        c.c_id AS categoryId,
+        c.c_name AS categoryName,
+        d.d_id AS difficultyId,
+        d.d_name AS difficultyName
+      FROM projects p
+      JOIN categories c ON c.c_id = p.p_c_id
+      JOIN difficulties d ON d.d_id = p.p_d_id
+      WHERE p.p_u_id = ?
+      ORDER BY p.p_created_at DESC, p.p_id DESC
+      `,
+    )
+    .all(req.session.userId)
 
   res.json({
     data: rows.map((row) => mapProject(row)),
