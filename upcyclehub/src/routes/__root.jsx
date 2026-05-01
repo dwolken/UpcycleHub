@@ -31,7 +31,7 @@ function RootLayoutContent() {
   const accountLinkClassName =
     'rounded-md px-3 py-2 text-sm font-medium text-emerald-800 transition hover:bg-emerald-50 hover:text-emerald-950'
   const buttonClassName =
-    'rounded-md border border-stone-300 bg-white px-3 py-2 text-sm font-medium text-stone-700 transition hover:border-stone-400 hover:bg-stone-50 hover:text-stone-950'
+    'rounded-md bg-stone-800 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-stone-900'
 
   async function handleLogout() {
     await logout()
@@ -88,25 +88,27 @@ function RootLayoutContent() {
             ) : null}
 
             {!isLoading && isAuthenticated ? (
-              <div className="flex flex-wrap items-center gap-2 rounded-lg border border-stone-200 bg-stone-50 p-1">
-                <span className="rounded-md bg-white px-3 py-2 text-sm font-semibold text-stone-800 shadow-sm">
+              <>
+                <div className="flex flex-wrap items-center gap-2 border-t border-stone-200 pt-3 sm:border-l sm:border-t-0 sm:pl-3 sm:pt-0">
+                  <Link
+                    to="/my-projects"
+                    className={accountLinkClassName}
+                    activeProps={{ className: `${accountLinkClassName} bg-emerald-100 text-emerald-950` }}
+                  >
+                    Meine Projekte
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className={buttonClassName}
+                  >
+                    Abmelden
+                  </button>
+                </div>
+                <span className="w-fit rounded-full border border-stone-200 bg-stone-50 px-3 py-1.5 text-xs font-semibold text-stone-600">
                   {user.username}
                 </span>
-                <Link
-                  to="/my-projects"
-                  className={accountLinkClassName}
-                  activeProps={{ className: `${accountLinkClassName} bg-emerald-100 text-emerald-950` }}
-                >
-                  Meine Projekte
-                </Link>
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  className={buttonClassName}
-                >
-                  Abmelden
-                </button>
-              </div>
+              </>
             ) : null}
           </nav>
         </div>
