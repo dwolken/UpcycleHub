@@ -1,5 +1,6 @@
 INSERT INTO users (u_id, u_username, u_password_hash, u_created_at) VALUES
-  (1, 'upcyclehub', 'seed-password-hash', '2026-04-28 10:00:00');
+  (1, 'lena', '$2b$10$LdtLCnADKY.0wzneDHyMjOO2GPOgV8Eie2fG85/Vz1EGIJ96bwvEe', '2026-04-28 10:00:00'),
+  (2, 'max', '$2b$10$ejV9ka4Ef8MraIZcGYbAKusJmNYUvpg.C/6aPLwwSjZJ.QdybRxe.', '2026-04-28 10:05:00');
 
 INSERT INTO categories (c_id, c_name) VALUES
   (1, 'Wohnen'),
@@ -96,7 +97,7 @@ INSERT INTO projects (
   ),
   (
     4,
-    1,
+    2,
     4,
     1,
     'Stoffbeutel aus altem T-Shirt',
@@ -110,7 +111,7 @@ INSERT INTO projects (
   ),
   (
     5,
-    1,
+    2,
     1,
     1,
     'Kerzenhalter aus Glasflasche',
@@ -124,7 +125,7 @@ INSERT INTO projects (
   ),
   (
     6,
-    1,
+    2,
     2,
     2,
     'Dokumentenbox aus Versandkarton',

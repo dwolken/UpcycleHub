@@ -3,8 +3,10 @@
 import {
   Link,
   Outlet,
+  useNavigate,
   createRootRoute,
 } from '@tanstack/react-router'
+import { AuthProvider, useAuth } from '../auth/AuthContext.jsx'
 import AppIcon from '../components/AppIcon.jsx'
 
 export const Route = createRootRoute({
@@ -12,8 +14,29 @@ export const Route = createRootRoute({
 })
 
 function RootLayout() {
+  return (
+    <AuthProvider>
+      <RootLayoutContent />
+    </AuthProvider>
+  )
+}
+
+function RootLayoutContent() {
+  const navigate = useNavigate()
+  const { isAuthenticated, isLoading, logout, user } = useAuth()
   const linkClassName =
     'rounded-md px-3 py-2 text-sm font-medium text-stone-600 transition hover:bg-stone-100 hover:text-stone-950'
+  const loginLinkClassName =
+    'rounded-md bg-emerald-700 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-800'
+  const accountLinkClassName =
+    'rounded-md px-3 py-2 text-sm font-medium text-emerald-800 transition hover:bg-emerald-50 hover:text-emerald-950'
+  const buttonClassName =
+    'rounded-md bg-stone-800 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-stone-900'
+
+  async function handleLogout() {
+    await logout()
+    await navigate({ to: '/' })
+  }
 
   return (
     <div className="min-h-screen bg-stone-50 text-stone-900">
@@ -33,23 +56,61 @@ function RootLayout() {
             </div>
           </div>
 
-          <nav className="flex gap-2">
-            <Link
-              to="/"
-              className={linkClassName}
-              activeOptions={{ exact: true }}
-              activeProps={{ className: `${linkClassName} bg-emerald-50 text-emerald-800` }}
-            >
-              Start
-            </Link>
-            <Link
-              to="/projects"
-              className={linkClassName}
-              activeProps={{ className: `${linkClassName} bg-emerald-50 text-emerald-800` }}
-            >
-              Projekte
-            </Link>
-          </nav>
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
+            <nav className="flex flex-wrap gap-2">
+              <Link
+                to="/"
+                className={linkClassName}
+                activeOptions={{ exact: true }}
+                activeProps={{ className: `${linkClassName} bg-emerald-50 text-emerald-800` }}
+              >
+                Start
+              </Link>
+              <Link
+                to="/projects"
+                className={linkClassName}
+                activeProps={{ className: `${linkClassName} bg-emerald-50 text-emerald-800` }}
+              >
+                Projekte
+              </Link>
+            </nav>
+
+            {!isLoading ? (
+              <div className="flex flex-wrap items-center gap-2 border-t border-stone-200 pt-3 sm:border-l sm:border-t-0 sm:pl-3 sm:pt-0">
+                {!isAuthenticated ? (
+                  <Link
+                    to="/login"
+                    className={loginLinkClassName}
+                    activeProps={{ className: `${loginLinkClassName} bg-emerald-800` }}
+                  >
+                    Anmelden
+                  </Link>
+                ) : null}
+
+                {isAuthenticated ? (
+                  <>
+                    <Link
+                      to="/my-projects"
+                      className={accountLinkClassName}
+                      activeProps={{ className: `${accountLinkClassName} bg-emerald-100 text-emerald-950` }}
+                    >
+                      Meine Projekte
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={handleLogout}
+                      className={buttonClassName}
+                    >
+                      Abmelden
+                    </button>
+                    <span className="w-fit rounded-full border border-stone-200 bg-stone-50 px-3 py-1.5 text-xs font-semibold text-stone-600">
+                      {user.username}
+                    </span>
+                  </>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
         </div>
       </header>
 
