@@ -27,16 +27,34 @@ function RegisterPage() {
   }
 
   function validateForm() {
-    if (formData.username.trim().length < 3) {
+    const username = formData.username.trim()
+
+    if (!username) {
+      return 'Bitte gib einen Benutzernamen ein.'
+    }
+
+    if (username.length < 3) {
       return 'Der Benutzername muss mindestens 3 Zeichen lang sein.'
     }
 
+    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+      return 'Der Benutzername darf nur Buchstaben, Zahlen und Unterstriche enthalten.'
+    }
+
+    if (!formData.password) {
+      return 'Bitte gib ein Passwort ein.'
+    }
+
     if (formData.password.length < 6) {
-      return 'Das Passwort muss mindestens 6 Zeichen lang sein.'
+      return 'Das Passwort ist zu kurz.'
+    }
+
+    if (!formData.passwordConfirmation) {
+      return 'Bitte bestätige dein Passwort.'
     }
 
     if (formData.password !== formData.passwordConfirmation) {
-      return 'Die Passwörter stimmen nicht überein.'
+      return 'Passwort und Bestätigung stimmen nicht überein.'
     }
 
     return ''

@@ -1,51 +1,83 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api'
+const API_BASE_URL = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '')
+const BACKEND_PORT = '3000'
+const RESPONSE_ERROR_MESSAGE =
+  'Die Serverantwort konnte nicht gelesen werden.'
+const NETWORK_ERROR_MESSAGE =
+  'Der Server ist nicht erreichbar. Bitte starte das Backend.'
+
+function getApiBaseUrls() {
+  const urls = [API_BASE_URL]
+
+  if (!API_BASE_URL.startsWith('http') && typeof window !== 'undefined') {
+    const backendUrl = `${window.location.protocol}//${window.location.hostname}:${BACKEND_PORT}/api`
+    urls.push(backendUrl)
+  }
+
+  return [...new Set(urls)]
+}
 
 async function readJsonResponse(response) {
   const text = await response.text()
 
   if (!text) {
-    return { data: null }
+    return {
+      result: { data: null },
+      parseError: false,
+    }
   }
 
   try {
-    return JSON.parse(text)
+    return {
+      result: JSON.parse(text),
+      parseError: false,
+    }
   } catch {
-    return null
+    return {
+      result: null,
+      parseError: true,
+    }
   }
 }
 
 async function authRequest(path, options = {}) {
-  const fallbackMessage =
-    options.fallbackMessage || 'Die Anfrage konnte nicht verarbeitet werden.'
-  let response
+  const requestOptions = {
+    method: options.method || 'GET',
+    credentials: 'include',
+    headers: options.body
+      ? {
+          'Content-Type': 'application/json',
+          ...(options.headers || {}),
+        }
+      : options.headers,
+    body: options.body ? JSON.stringify(options.body) : undefined,
+  }
+  let networkFailed = false
 
-  try {
-    response = await fetch(`${API_BASE_URL}${path}`, {
-      method: options.method || 'GET',
-      credentials: 'include',
-      headers: options.body
-        ? {
-            'Content-Type': 'application/json',
-            ...(options.headers || {}),
-          }
-        : options.headers,
-      body: options.body ? JSON.stringify(options.body) : undefined,
-    })
-  } catch {
-    throw new Error(fallbackMessage)
+  for (const baseUrl of getApiBaseUrls()) {
+    try {
+      const response = await fetch(`${baseUrl}${path}`, requestOptions)
+      const { result, parseError } = await readJsonResponse(response)
+
+      if (parseError) {
+        continue
+      }
+
+      if (!response.ok) {
+        throw new Error(result?.message || RESPONSE_ERROR_MESSAGE)
+      }
+
+      return result.data
+    } catch (error) {
+      if (error instanceof TypeError) {
+        networkFailed = true
+        continue
+      }
+
+      throw error
+    }
   }
 
-  const result = await readJsonResponse(response)
-
-  if (!response.ok) {
-    throw new Error(result?.message || fallbackMessage)
-  }
-
-  if (!result) {
-    throw new Error(fallbackMessage)
-  }
-
-  return result.data
+  throw new Error(networkFailed ? NETWORK_ERROR_MESSAGE : RESPONSE_ERROR_MESSAGE)
 }
 
 export function getCurrentUser() {
@@ -56,7 +88,6 @@ export function loginUser({ username, password }) {
   return authRequest('/auth/login', {
     method: 'POST',
     body: { username, password },
-    fallbackMessage: 'Anmeldung fehlgeschlagen. Bitte überprüfe deine Eingaben.',
   })
 }
 
@@ -64,14 +95,11 @@ export function registerUser({ username, password }) {
   return authRequest('/auth/register', {
     method: 'POST',
     body: { username, password },
-    fallbackMessage:
-      'Registrierung fehlgeschlagen. Bitte überprüfe deine Eingaben.',
   })
 }
 
 export function logoutUser() {
   return authRequest('/auth/logout', {
     method: 'POST',
-    fallbackMessage: 'Abmeldung fehlgeschlagen.',
   })
 }

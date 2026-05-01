@@ -6,7 +6,7 @@ import {
   useNavigate,
   createRootRoute,
 } from '@tanstack/react-router'
-import { useAuth } from '../auth/AuthContext.jsx'
+import { AuthProvider, useAuth } from '../auth/AuthContext.jsx'
 import AppIcon from '../components/AppIcon.jsx'
 
 export const Route = createRootRoute({
@@ -14,6 +14,14 @@ export const Route = createRootRoute({
 })
 
 function RootLayout() {
+  return (
+    <AuthProvider>
+      <RootLayoutContent />
+    </AuthProvider>
+  )
+}
+
+function RootLayoutContent() {
   const navigate = useNavigate()
   const { isAuthenticated, isLoading, logout, user } = useAuth()
   const linkClassName =

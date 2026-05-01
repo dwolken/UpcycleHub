@@ -29,8 +29,13 @@ function LoginPage() {
     event.preventDefault()
     setError('')
 
-    if (!formData.username.trim() || !formData.password) {
-      setError('Bitte gib Benutzername und Passwort ein.')
+    if (!formData.username.trim()) {
+      setError('Bitte gib einen Benutzernamen ein.')
+      return
+    }
+
+    if (!formData.password) {
+      setError('Bitte gib ein Passwort ein.')
       return
     }
 

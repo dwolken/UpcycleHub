@@ -21,8 +21,16 @@ function mapUser(row) {
 }
 
 function validateUsername(username) {
-  if (!username || username.length < 3 || username.length > 30) {
-    return 'Der Benutzername muss zwischen 3 und 30 Zeichen lang sein.'
+  if (!username) {
+    return 'Bitte gib einen Benutzernamen ein.'
+  }
+
+  if (username.length < 3) {
+    return 'Der Benutzername muss mindestens 3 Zeichen lang sein.'
+  }
+
+  if (username.length > 30) {
+    return 'Der Benutzername darf maximal 30 Zeichen lang sein.'
   }
 
   if (!/^[a-zA-Z0-9_]+$/.test(username)) {
@@ -33,8 +41,12 @@ function validateUsername(username) {
 }
 
 function validatePassword(password) {
-  if (!password || password.length < 6) {
-    return 'Das Passwort muss mindestens 6 Zeichen lang sein.'
+  if (!password) {
+    return 'Bitte gib ein Passwort ein.'
+  }
+
+  if (password.length < 6) {
+    return 'Das Passwort ist zu kurz.'
   }
 
   return ''
@@ -74,7 +86,7 @@ router.post('/register', async (req, res, next) => {
       .get(username)
 
     if (existingUser) {
-      return sendError(res, 'Benutzername bereits vergeben.', 409)
+      return sendError(res, 'Benutzername ist bereits vergeben.', 409)
     }
 
     const passwordHash = await bcrypt.hash(password, 10)
@@ -110,8 +122,12 @@ router.post('/login', async (req, res, next) => {
     const username = String(req.body?.username || '').trim()
     const password = String(req.body?.password || '')
 
-    if (!username || !password) {
-      return sendError(res, 'Benutzername und Passwort sind erforderlich.', 400)
+    if (!username) {
+      return sendError(res, 'Bitte gib einen Benutzernamen ein.', 400)
+    }
+
+    if (!password) {
+      return sendError(res, 'Bitte gib ein Passwort ein.', 400)
     }
 
     const user = db
