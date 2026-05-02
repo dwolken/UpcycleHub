@@ -155,6 +155,30 @@ function deleteUploadedFile(file) {
   }
 }
 
+function deleteProjectImage(imageUrl) {
+  if (!imageUrl || !imageUrl.startsWith('/images/projects/')) {
+    return
+  }
+
+  const fileName = path.basename(imageUrl)
+  const looksLikeUploadedProjectImage =
+    /-\d{13}-\d+\.(jpe?g|png|webp|gif)$/i.test(fileName)
+
+  if (!looksLikeUploadedProjectImage) {
+    return
+  }
+
+  const filePath = path.join(uploadDirectory, fileName)
+  const resolvedUploadDirectory = path.resolve(uploadDirectory)
+  const resolvedFilePath = path.resolve(filePath)
+
+  if (!resolvedFilePath.startsWith(`${resolvedUploadDirectory}${path.sep}`)) {
+    return
+  }
+
+  fs.unlink(resolvedFilePath, () => {})
+}
+
 function parseArrayField(value) {
   if (Array.isArray(value)) {
     return value
@@ -698,6 +722,44 @@ router.put('/:id', requireAuth, uploadProjectImage, (req, res, next) => {
     })
   } catch (error) {
     deleteUploadedFile(req.file)
+    return next(error)
+  }
+})
+
+router.delete('/:id', requireAuth, (req, res, next) => {
+  const existingProject = db
+    .prepare('SELECT p_id, p_u_id, p_image_url FROM projects WHERE p_id = ?')
+    .get(req.params.id)
+
+  if (!existingProject) {
+    return res.status(404).json({
+      message: 'Projekt wurde nicht gefunden.',
+    })
+  }
+
+  if (existingProject.p_u_id !== req.session.userId) {
+    return res.status(403).json({
+      message: 'Loeschen nicht erlaubt.',
+    })
+  }
+
+  try {
+    const deleteProject = db.transaction(() => {
+      db.prepare('DELETE FROM projects WHERE p_id = ?').run(
+        existingProject.p_id,
+      )
+    })
+
+    deleteProject()
+    deleteProjectImage(existingProject.p_image_url)
+
+    return res.json({
+      message: 'Projekt wurde geloescht.',
+      data: {
+        id: existingProject.p_id,
+      },
+    })
+  } catch (error) {
     return next(error)
   }
 })
