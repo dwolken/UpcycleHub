@@ -60,15 +60,21 @@ async function readJsonResponse(response) {
 }
 
 async function request(path, options = {}) {
+  const hasFormDataBody =
+    typeof FormData !== 'undefined' && options.body instanceof FormData
   const requestOptions = {
     ...options,
-    headers: options.body
+    headers: options.body && !hasFormDataBody
       ? {
           'Content-Type': 'application/json',
           ...(options.headers || {}),
         }
       : options.headers,
-    body: options.body ? JSON.stringify(options.body) : undefined,
+    body: hasFormDataBody
+      ? options.body
+      : options.body
+        ? JSON.stringify(options.body)
+        : undefined,
   }
 
   for (const baseUrl of getApiBaseUrls()) {

@@ -27,10 +27,12 @@ const initialForm = {
   summary: '',
   description: '',
   estimatedMinutes: '',
-  imageUrl: '',
+  imageFile: null,
   materials: [{ ...emptyMaterial }],
   steps: [{ ...emptyStep }],
 }
+
+const allowedImageTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
 
 const emptyValidationErrors = {
   fields: {},
@@ -121,8 +123,10 @@ function validateForm(form) {
     errors.fields.estimatedMinutes = 'Bitte gib eine gültige Dauer ein.'
   }
 
-  if (!form.imageUrl.trim()) {
-    errors.fields.imageUrl = 'Bitte gib einen Bildpfad ein.'
+  if (!form.imageFile) {
+    errors.fields.imageFile = 'Bitte wähle ein Bild aus.'
+  } else if (!allowedImageTypes.includes(form.imageFile.type)) {
+    errors.fields.imageFile = 'Bitte wähle eine gültige Bilddatei aus.'
   }
 
   const filledMaterialNames = []
@@ -213,6 +217,7 @@ function NewProjectPage() {
   const { isAuthenticated, isLoading } = useAuth()
   const [form, setForm] = useState(initialForm)
   const [projects, setProjects] = useState([])
+  const [imagePreviewUrl, setImagePreviewUrl] = useState('')
   const [isLoadingOptions, setIsLoadingOptions] = useState(false)
   const [errors, setErrors] = useState(emptyValidationErrors)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -245,6 +250,15 @@ function NewProjectPage() {
     [projects],
   )
 
+  useEffect(
+    () => () => {
+      if (imagePreviewUrl) {
+        URL.revokeObjectURL(imagePreviewUrl)
+      }
+    },
+    [imagePreviewUrl],
+  )
+
   function updateField(name, value) {
     setForm((currentForm) => ({
       ...currentForm,
@@ -258,6 +272,35 @@ function NewProjectPage() {
       },
       form: '',
     }))
+  }
+
+  function updateImageFile(file) {
+    setForm((currentForm) => ({
+      ...currentForm,
+      imageFile: file,
+    }))
+
+    if (file && allowedImageTypes.includes(file.type)) {
+      setImagePreviewUrl(URL.createObjectURL(file))
+    } else {
+      setImagePreviewUrl('')
+    }
+
+    setErrors((currentErrors) => ({
+      ...currentErrors,
+      fields: {
+        ...currentErrors.fields,
+        imageFile:
+          file && !allowedImageTypes.includes(file.type)
+            ? 'Bitte wähle eine gültige Bilddatei aus.'
+            : '',
+      },
+      form: '',
+    }))
+  }
+
+  function handleImageChange(event) {
+    updateImageFile(event.target.files?.[0] || null)
   }
 
   function updateMaterial(index, name, value) {
@@ -396,26 +439,37 @@ function NewProjectPage() {
     setErrors(emptyValidationErrors)
 
     try {
-      const createdProject = await createProject({
-        title: form.title.trim(),
-        categoryId: Number(form.categoryId),
-        difficultyId: Number(form.difficultyId),
-        summary: form.summary.trim(),
-        description: form.description.trim(),
-        estimatedMinutes: Number(form.estimatedMinutes),
-        imageUrl: form.imageUrl.trim(),
-        materials: form.materials
-          .filter((material) => material.name.trim())
-          .map((material) => ({
-            name: material.name.trim(),
-            amount: material.amount.trim(),
-            unit: material.unit.trim(),
-            note: material.note.trim(),
-          })),
-        steps: form.steps
-          .filter((step) => step.text.trim())
-          .map((step) => ({ text: step.text.trim() })),
-      })
+      const projectData = new FormData()
+      projectData.append('title', form.title.trim())
+      projectData.append('categoryId', form.categoryId)
+      projectData.append('difficultyId', form.difficultyId)
+      projectData.append('summary', form.summary.trim())
+      projectData.append('description', form.description.trim())
+      projectData.append('estimatedMinutes', form.estimatedMinutes)
+      projectData.append('image', form.imageFile)
+      projectData.append(
+        'materials',
+        JSON.stringify(
+          form.materials
+            .filter((material) => material.name.trim())
+            .map((material) => ({
+              name: material.name.trim(),
+              amount: material.amount.trim(),
+              unit: material.unit.trim(),
+              note: material.note.trim(),
+            })),
+        ),
+      )
+      projectData.append(
+        'steps',
+        JSON.stringify(
+          form.steps
+            .filter((step) => step.text.trim())
+            .map((step) => ({ text: step.text.trim() })),
+        ),
+      )
+
+      const createdProject = await createProject(projectData)
 
       await navigate({
         to: '/projects/$id',
@@ -557,16 +611,27 @@ function NewProjectPage() {
             </label>
 
             <label className="space-y-2 text-sm font-medium text-stone-700">
-              Bild-URL oder Bildpfad
+              Projektbild
               <input
-                value={form.imageUrl}
-                onChange={(event) => updateField('imageUrl', event.target.value)}
-                placeholder="/images/projects/mein-projekt.jpg"
-                aria-invalid={Boolean(errors.fields.imageUrl)}
-                className={fieldClassName(errors.fields.imageUrl)}
+                type="file"
+                accept={allowedImageTypes.join(',')}
+                onChange={handleImageChange}
+                aria-invalid={Boolean(errors.fields.imageFile)}
+                className={`${fieldClassName(errors.fields.imageFile)} file:mr-3 file:rounded-md file:border-0 file:bg-emerald-50 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-emerald-800`}
               />
-              <ErrorText>{errors.fields.imageUrl}</ErrorText>
+              <ErrorText>{errors.fields.imageFile}</ErrorText>
             </label>
+
+            {imagePreviewUrl ? (
+              <div className="space-y-2 md:col-span-2">
+                <p className="text-sm font-medium text-stone-700">Bildvorschau</p>
+                <img
+                  src={imagePreviewUrl}
+                  alt="Vorschau des Projektbilds"
+                  className="aspect-[16/9] w-full rounded-md border border-stone-200 object-cover"
+                />
+              </div>
+            ) : null}
 
             <label className="space-y-2 text-sm font-medium text-stone-700 md:col-span-2">
               Zusammenfassung

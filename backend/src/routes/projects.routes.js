@@ -1,8 +1,50 @@
+const fs = require('fs')
+const path = require('path')
 const express = require('express')
+const multer = require('multer')
 const db = require('../db')
 const requireAuth = require('../middleware/requireAuth')
 
 const router = express.Router()
+const uploadDirectory = path.join(__dirname, '..', '..', 'public', 'images', 'projects')
+const allowedImageTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif'])
+
+fs.mkdirSync(uploadDirectory, { recursive: true })
+
+const upload = multer({
+  storage: multer.diskStorage({
+    destination(req, file, cb) {
+      cb(null, uploadDirectory)
+    },
+    filename(req, file, cb) {
+      const extension = path.extname(file.originalname).toLowerCase()
+      const baseName = path
+        .basename(file.originalname, extension)
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+      const safeBaseName = baseName || 'projektbild'
+      const uniquePart = `${Date.now()}-${Math.round(Math.random() * 1e9)}`
+
+      cb(null, `${safeBaseName}-${uniquePart}${extension}`)
+    },
+  }),
+  fileFilter(req, file, cb) {
+    if (!allowedImageTypes.has(file.mimetype)) {
+      const error = new Error('Bitte waehle eine gueltige Bilddatei aus.')
+      error.status = 400
+      cb(error)
+      return
+    }
+
+    cb(null, true)
+  },
+  limits: {
+    fileSize: 5 * 1024 * 1024,
+  },
+})
 
 function getMaterials(projectId) {
   return db
@@ -100,6 +142,47 @@ function sendValidationError(res, message) {
   return res.status(400).json({ message })
 }
 
+function deleteUploadedFile(file) {
+  if (file?.path) {
+    fs.unlink(file.path, () => {})
+  }
+}
+
+function parseArrayField(value) {
+  if (Array.isArray(value)) {
+    return value
+  }
+
+  if (!value) {
+    return []
+  }
+
+  try {
+    const parsedValue = JSON.parse(value)
+    return Array.isArray(parsedValue) ? parsedValue : null
+  } catch {
+    return null
+  }
+}
+
+function uploadProjectImage(req, res, next) {
+  upload.single('image')(req, res, (error) => {
+    if (!error) {
+      return next()
+    }
+
+    if (error instanceof multer.MulterError && error.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({
+        message: 'Das Bild darf maximal 5 MB gross sein.',
+      })
+    }
+
+    return res.status(error.status || 400).json({
+      message: error.message || 'Das Bild konnte nicht hochgeladen werden.',
+    })
+  })
+}
+
 function createSlug(title) {
   return (
     title
@@ -135,8 +218,8 @@ function validateProjectPayload(body) {
   const categoryId = Number(body?.categoryId)
   const difficultyId = Number(body?.difficultyId)
   const estimatedMinutes = Number(body?.estimatedMinutes)
-  const materials = Array.isArray(body?.materials) ? body.materials : []
-  const steps = Array.isArray(body?.steps) ? body.steps : []
+  const materials = parseArrayField(body?.materials)
+  const steps = parseArrayField(body?.steps)
 
   if (!title) {
     return { error: 'Bitte gib einen Projekttitel ein.' }
@@ -163,7 +246,11 @@ function validateProjectPayload(body) {
   }
 
   if (!imageUrl) {
-    return { error: 'Bitte gib eine Bild-URL oder einen Bildpfad ein.' }
+    return { error: 'Bitte waehle ein Bild aus.' }
+  }
+
+  if (!materials || !steps) {
+    return { error: 'Die Projektdaten konnten nicht gelesen werden.' }
   }
 
   const cleanedMaterials = materials
@@ -295,10 +382,15 @@ router.get('/', (req, res) => {
   })
 })
 
-router.post('/', requireAuth, (req, res, next) => {
-  const validation = validateProjectPayload(req.body)
+router.post('/', requireAuth, uploadProjectImage, (req, res, next) => {
+  const imageUrl = req.file ? `/images/projects/${req.file.filename}` : ''
+  const validation = validateProjectPayload({
+    ...req.body,
+    imageUrl,
+  })
 
   if (validation.error) {
+    deleteUploadedFile(req.file)
     return sendValidationError(res, validation.error)
   }
 
@@ -311,10 +403,12 @@ router.post('/', requireAuth, (req, res, next) => {
     .get(project.difficultyId)
 
   if (!categoryExists) {
+    deleteUploadedFile(req.file)
     return sendValidationError(res, 'Die ausgewaehlte Kategorie ist ungueltig.')
   }
 
   if (!difficultyExists) {
+    deleteUploadedFile(req.file)
     return sendValidationError(
       res,
       'Die ausgewaehlte Schwierigkeit ist ungueltig.',
@@ -407,6 +501,7 @@ router.post('/', requireAuth, (req, res, next) => {
       data: mapProject(createdProject, true),
     })
   } catch (error) {
+    deleteUploadedFile(req.file)
     return next(error)
   }
 })
