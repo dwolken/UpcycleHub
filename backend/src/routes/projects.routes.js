@@ -84,6 +84,7 @@ function getProjectRow(projectId) {
       `
       SELECT
         p.p_id AS id,
+        p.p_u_id AS ownerId,
         p.p_title AS title,
         p.p_slug AS slug,
         p.p_summary AS summary,
@@ -95,10 +96,12 @@ function getProjectRow(projectId) {
         c.c_id AS categoryId,
         c.c_name AS categoryName,
         d.d_id AS difficultyId,
-        d.d_name AS difficultyName
+        d.d_name AS difficultyName,
+        u.u_username AS ownerUsername
       FROM projects p
       JOIN categories c ON c.c_id = p.p_c_id
       JOIN difficulties d ON d.d_id = p.p_d_id
+      JOIN users u ON u.u_id = p.p_u_id
       WHERE p.p_id = ?
       `,
     )
@@ -116,6 +119,10 @@ function mapProject(row, includeDetails = false) {
     imageUrl: row.imageUrl,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
+    owner: {
+      id: row.ownerId,
+      username: row.ownerUsername,
+    },
     category: {
       id: row.categoryId,
       name: row.categoryName,
@@ -195,14 +202,20 @@ function createSlug(title) {
   )
 }
 
-function createUniqueSlug(title) {
+function createUniqueSlug(title, ignoredProjectId = null) {
   const baseSlug = createSlug(title)
   let slug = baseSlug
   let counter = 2
 
-  const slugExists = db.prepare('SELECT 1 FROM projects WHERE p_slug = ?')
+  const slugExists = db.prepare(
+    ignoredProjectId
+      ? 'SELECT 1 FROM projects WHERE p_slug = ? AND p_id != ?'
+      : 'SELECT 1 FROM projects WHERE p_slug = ?',
+  )
 
-  while (slugExists.get(slug)) {
+  while (
+    ignoredProjectId ? slugExists.get(slug, ignoredProjectId) : slugExists.get(slug)
+  ) {
     slug = `${baseSlug}-${counter}`
     counter += 1
   }
@@ -356,6 +369,7 @@ router.get('/', (req, res) => {
       `
       SELECT
         p.p_id AS id,
+        p.p_u_id AS ownerId,
         p.p_title AS title,
         p.p_slug AS slug,
         p.p_summary AS summary,
@@ -367,10 +381,12 @@ router.get('/', (req, res) => {
         c.c_id AS categoryId,
         c.c_name AS categoryName,
         d.d_id AS difficultyId,
-        d.d_name AS difficultyName
+        d.d_name AS difficultyName,
+        u.u_username AS ownerUsername
       FROM projects p
       JOIN categories c ON c.c_id = p.p_c_id
       JOIN difficulties d ON d.d_id = p.p_d_id
+      JOIN users u ON u.u_id = p.p_u_id
       ${where}
       ORDER BY p.p_created_at DESC, p.p_id DESC
       `,
@@ -512,6 +528,7 @@ router.get('/mine', requireAuth, (req, res) => {
       `
       SELECT
         p.p_id AS id,
+        p.p_u_id AS ownerId,
         p.p_title AS title,
         p.p_slug AS slug,
         p.p_summary AS summary,
@@ -523,10 +540,12 @@ router.get('/mine', requireAuth, (req, res) => {
         c.c_id AS categoryId,
         c.c_name AS categoryName,
         d.d_id AS difficultyId,
-        d.d_name AS difficultyName
+        d.d_name AS difficultyName,
+        u.u_username AS ownerUsername
       FROM projects p
       JOIN categories c ON c.c_id = p.p_c_id
       JOIN difficulties d ON d.d_id = p.p_d_id
+      JOIN users u ON u.u_id = p.p_u_id
       WHERE p.p_u_id = ?
       ORDER BY p.p_created_at DESC, p.p_id DESC
       `,
@@ -536,6 +555,151 @@ router.get('/mine', requireAuth, (req, res) => {
   res.json({
     data: rows.map((row) => mapProject(row)),
   })
+})
+
+router.put('/:id', requireAuth, uploadProjectImage, (req, res, next) => {
+  const existingProject = db
+    .prepare('SELECT p_id, p_u_id, p_image_url FROM projects WHERE p_id = ?')
+    .get(req.params.id)
+
+  if (!existingProject) {
+    deleteUploadedFile(req.file)
+    return res.status(404).json({
+      message: 'Projekt wurde nicht gefunden.',
+    })
+  }
+
+  if (existingProject.p_u_id !== req.session.userId) {
+    deleteUploadedFile(req.file)
+    return res.status(403).json({
+      message: 'Du darfst dieses Projekt nicht bearbeiten.',
+    })
+  }
+
+  const imageUrl = req.file
+    ? `/images/projects/${req.file.filename}`
+    : existingProject.p_image_url
+  const validation = validateProjectPayload({
+    ...req.body,
+    imageUrl,
+  })
+
+  if (validation.error) {
+    deleteUploadedFile(req.file)
+    return sendValidationError(res, validation.error)
+  }
+
+  const project = validation.project
+  const categoryExists = db
+    .prepare('SELECT 1 FROM categories WHERE c_id = ?')
+    .get(project.categoryId)
+  const difficultyExists = db
+    .prepare('SELECT 1 FROM difficulties WHERE d_id = ?')
+    .get(project.difficultyId)
+
+  if (!categoryExists) {
+    deleteUploadedFile(req.file)
+    return sendValidationError(res, 'Die ausgewaehlte Kategorie ist ungueltig.')
+  }
+
+  if (!difficultyExists) {
+    deleteUploadedFile(req.file)
+    return sendValidationError(
+      res,
+      'Die ausgewaehlte Schwierigkeit ist ungueltig.',
+    )
+  }
+
+  try {
+    const updateProject = db.transaction(() => {
+      db.prepare(
+        `
+        UPDATE projects
+        SET
+          p_c_id = ?,
+          p_d_id = ?,
+          p_title = ?,
+          p_slug = ?,
+          p_summary = ?,
+          p_description = ?,
+          p_estimated_minutes = ?,
+          p_image_url = ?,
+          p_updated_at = CURRENT_TIMESTAMP
+        WHERE p_id = ?
+        `,
+      ).run(
+        project.categoryId,
+        project.difficultyId,
+        project.title,
+        createUniqueSlug(project.title, existingProject.p_id),
+        project.summary,
+        project.description,
+        project.estimatedMinutes,
+        project.imageUrl,
+        existingProject.p_id,
+      )
+
+      db.prepare('DELETE FROM project_materials WHERE pm_p_id = ?').run(
+        existingProject.p_id,
+      )
+      db.prepare('DELETE FROM project_steps WHERE ps_p_id = ?').run(
+        existingProject.p_id,
+      )
+
+      const findMaterial = db.prepare(
+        'SELECT m_id FROM materials WHERE LOWER(m_name) = LOWER(?)',
+      )
+      const insertMaterial = db.prepare(
+        'INSERT INTO materials (m_name) VALUES (?)',
+      )
+      const insertProjectMaterial = db.prepare(
+        `
+        INSERT INTO project_materials (
+          pm_p_id,
+          pm_m_id,
+          pm_amount,
+          pm_unit,
+          pm_note
+        )
+        VALUES (?, ?, ?, ?, ?)
+        `,
+      )
+      const insertStep = db.prepare(
+        `
+        INSERT INTO project_steps (ps_p_id, ps_step_number, ps_text)
+        VALUES (?, ?, ?)
+        `,
+      )
+
+      project.materials.forEach((material) => {
+        const existingMaterial = findMaterial.get(material.name)
+        const materialId =
+          existingMaterial?.m_id ||
+          insertMaterial.run(material.name).lastInsertRowid
+
+        insertProjectMaterial.run(
+          existingProject.p_id,
+          materialId,
+          material.amount,
+          material.unit,
+          material.note,
+        )
+      })
+
+      project.steps.forEach((step, index) => {
+        insertStep.run(existingProject.p_id, index + 1, step)
+      })
+    })
+
+    updateProject()
+
+    return res.json({
+      data: mapProject(getProjectRow(existingProject.p_id), true),
+    })
+  } catch (error) {
+    deleteUploadedFile(req.file)
+    return next(error)
+  }
 })
 
 router.get('/:id', (req, res, next) => {
