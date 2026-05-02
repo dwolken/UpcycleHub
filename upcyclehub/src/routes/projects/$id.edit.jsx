@@ -105,6 +105,38 @@ function projectToForm(project) {
   }
 }
 
+function normalizeFormForDirtyCheck(form) {
+  return {
+    title: form.title,
+    categoryId: form.categoryId,
+    difficultyId: form.difficultyId,
+    summary: form.summary,
+    description: form.description,
+    estimatedMinutes: form.estimatedMinutes,
+    hasReplacementImage: Boolean(form.imageFile),
+    materials: form.materials.map((material) => ({
+      name: material.name,
+      amount: material.amount,
+      unit: material.unit,
+      note: material.note,
+    })),
+    steps: form.steps.map((step) => ({
+      text: step.text,
+    })),
+  }
+}
+
+function formsAreEqual(form, originalForm) {
+  if (!originalForm) {
+    return true
+  }
+
+  return (
+    JSON.stringify(normalizeFormForDirtyCheck(form)) ===
+    JSON.stringify(normalizeFormForDirtyCheck(originalForm))
+  )
+}
+
 function validateForm(form, hasCurrentImage) {
   const errors = {
     fields: {},
@@ -240,6 +272,7 @@ function EditProjectPage() {
   const navigate = useNavigate()
   const { isAuthenticated, isLoading, user } = useAuth()
   const [form, setForm] = useState(initialForm)
+  const [originalForm, setOriginalForm] = useState(null)
   const [project, setProject] = useState(null)
   const [projects, setProjects] = useState([])
   const [imagePreviewUrl, setImagePreviewUrl] = useState('')
@@ -257,9 +290,11 @@ function EditProjectPage() {
 
     Promise.all([getProject(id), getProjects()])
       .then(([projectData, projectsData]) => {
+        const loadedForm = projectToForm(projectData)
         setProject(projectData)
         setProjects(projectsData)
-        setForm(projectToForm(projectData))
+        setForm(loadedForm)
+        setOriginalForm(loadedForm)
         setImagePreviewUrl('')
       })
       .catch(() =>
@@ -289,6 +324,7 @@ function EditProjectPage() {
   )
 
   const isOwner = Boolean(project?.owner?.id && user?.id === project.owner.id)
+  const isDirty = !formsAreEqual(form, originalForm)
 
   useEffect(
     () => () => {
@@ -472,6 +508,10 @@ function EditProjectPage() {
 
   async function handleSubmit(event) {
     event.preventDefault()
+
+    if (!isDirty) {
+      return
+    }
 
     const validationErrors = validateForm(form, Boolean(project?.imageUrl))
     if (hasValidationErrors(validationErrors)) {
@@ -904,10 +944,14 @@ function EditProjectPage() {
         <div className="flex flex-wrap items-center gap-3">
           <button
             type="submit"
-            disabled={isSubmitting}
-            className="rounded-md bg-emerald-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={isSubmitting || !isDirty}
+            className={`rounded-md px-5 py-2.5 text-sm font-semibold shadow-sm transition disabled:cursor-not-allowed ${
+              isDirty
+                ? 'bg-emerald-700 text-white hover:bg-emerald-800 disabled:opacity-60'
+                : 'border border-stone-300 bg-stone-100 text-stone-400'
+            }`}
           >
-            {isSubmitting ? 'Projekt wird gespeichert' : 'Aenderungen speichern'}
+            {isSubmitting ? 'Projekt wird gespeichert' : 'Änderungen speichern'}
           </button>
           <Link
             to="/projects/$id"
