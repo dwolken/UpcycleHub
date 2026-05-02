@@ -60,6 +60,17 @@ async function readJsonResponse(response) {
 }
 
 async function request(path, options = {}) {
+  const requestOptions = {
+    ...options,
+    headers: options.body
+      ? {
+          'Content-Type': 'application/json',
+          ...(options.headers || {}),
+        }
+      : options.headers,
+    body: options.body ? JSON.stringify(options.body) : undefined,
+  }
+
   for (const baseUrl of getApiBaseUrls()) {
     const controller = new AbortController()
     const timeoutId = window.setTimeout(
@@ -70,7 +81,7 @@ async function request(path, options = {}) {
     try {
       const response = await fetch(`${baseUrl}${path}`, {
         signal: controller.signal,
-        ...options,
+        ...requestOptions,
       })
       const { result, parseError } = await readJsonResponse(response)
 
@@ -117,5 +128,13 @@ export function getProject(id) {
 export function getMyProjects() {
   return request('/projects/mine', {
     credentials: 'include',
+  })
+}
+
+export function createProject(project) {
+  return request('/projects', {
+    method: 'POST',
+    credentials: 'include',
+    body: project,
   })
 }
