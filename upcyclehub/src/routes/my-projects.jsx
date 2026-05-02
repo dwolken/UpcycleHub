@@ -72,13 +72,22 @@ function MyProjectsPage() {
 
   return (
     <div className="space-y-8">
-      <section className="space-y-3">
-        <h1 className="text-3xl font-semibold text-stone-950">
-          Meine Projekte
-        </h1>
-        <p className="text-sm leading-6 text-stone-600">
-          Angemeldet als <span className="font-medium">{user.username}</span>.
-        </p>
+      <section className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <div className="space-y-3">
+          <h1 className="text-3xl font-semibold text-stone-950">
+            Meine Projekte
+          </h1>
+          <p className="text-sm leading-6 text-stone-600">
+            Angemeldet als <span className="font-medium">{user.username}</span>.
+          </p>
+        </div>
+
+        <Link
+          to="/projects/new"
+          className="w-fit rounded-md bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-800"
+        >
+          Projekt erstellen
+        </Link>
       </section>
 
       {isLoadingProjects ? (
@@ -102,9 +111,17 @@ function MyProjectsPage() {
       ) : null}
 
       {!isLoadingProjects && !error && projects.length === 0 ? (
-        <p className="rounded-lg border border-stone-200 bg-white p-5 text-sm text-stone-600">
-          Du hast noch keine eigenen Projekte.
-        </p>
+        <section className="space-y-4 rounded-lg border border-stone-200 bg-white p-5 shadow-sm">
+          <p className="text-sm text-stone-600">
+            Du hast noch keine eigenen Projekte.
+          </p>
+          <Link
+            to="/projects/new"
+            className="inline-flex rounded-md bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-800"
+          >
+            Erstes Projekt erstellen
+          </Link>
+        </section>
       ) : null}
     </div>
   )
