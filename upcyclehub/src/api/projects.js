@@ -144,3 +144,11 @@ export function createProject(project) {
     body: project,
   })
 }
+
+export function updateProject(id, project) {
+  return request(`/projects/${id}`, {
+    method: 'PUT',
+    credentials: 'include',
+    body: project,
+  })
+}

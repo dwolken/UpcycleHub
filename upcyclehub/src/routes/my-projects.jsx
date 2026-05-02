@@ -105,7 +105,19 @@ function MyProjectsPage() {
       {!isLoadingProjects && !error && projects.length > 0 ? (
         <section className="grid gap-4 md:grid-cols-2">
           {projects.map((project) => (
-            <ProjectCard key={project.id} project={project} />
+            <ProjectCard
+              key={project.id}
+              project={project}
+              action={
+                <Link
+                  to="/projects/$id/edit"
+                  params={{ id: String(project.id) }}
+                  className="font-medium text-stone-700 hover:text-stone-950"
+                >
+                  Bearbeiten
+                </Link>
+              }
+            />
           ))}
         </section>
       ) : null}

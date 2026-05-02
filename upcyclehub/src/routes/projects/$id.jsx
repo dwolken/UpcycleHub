@@ -1,8 +1,9 @@
 /* eslint-disable react-hooks/set-state-in-effect, react-refresh/only-export-components */
 
-import { Link, createFileRoute } from '@tanstack/react-router'
+import { Link, Outlet, createFileRoute, useLocation } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { getProject } from '../../api/projects.js'
+import { useAuth } from '../../auth/AuthContext.jsx'
 
 export const Route = createFileRoute('/projects/$id')({
   component: ProjectDetailPage,
@@ -14,11 +15,18 @@ function formatMaterialAmount(material) {
 
 function ProjectDetailPage() {
   const { id } = Route.useParams()
+  const location = useLocation()
+  const { user } = useAuth()
   const [project, setProject] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
+  const isEditRoute = location.pathname === `/projects/${id}/edit`
 
   useEffect(() => {
+    if (isEditRoute) {
+      return
+    }
+
     setIsLoading(true)
     setError('')
 
@@ -26,7 +34,11 @@ function ProjectDetailPage() {
       .then((data) => setProject(data))
       .catch(() => setError('Das Projekt konnte nicht geladen werden.'))
       .finally(() => setIsLoading(false))
-  }, [id])
+  }, [id, isEditRoute])
+
+  if (isEditRoute) {
+    return <Outlet />
+  }
 
   if (isLoading) {
     return (
@@ -54,12 +66,24 @@ function ProjectDetailPage() {
 
   return (
     <article className="space-y-8">
-      <Link
-        to="/projects"
-        className="inline-flex text-sm font-medium text-emerald-700 hover:text-emerald-900"
-      >
-        Zurück zur Übersicht
-      </Link>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Link
+          to="/projects"
+          className="inline-flex text-sm font-medium text-emerald-700 hover:text-emerald-900"
+        >
+          Zurück zur Übersicht
+        </Link>
+
+        {user?.id === project.owner?.id ? (
+          <Link
+            to="/projects/$id/edit"
+            params={{ id: String(project.id) }}
+            className="rounded-md border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-100"
+          >
+            Projekt bearbeiten
+          </Link>
+        ) : null}
+      </div>
 
       <section className="overflow-hidden rounded-lg border border-stone-200 bg-white shadow-sm">
         <img

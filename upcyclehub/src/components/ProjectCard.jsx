@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router'
 
-function ProjectCard({ project }) {
+function ProjectCard({ project, action }) {
   return (
     <article className="group flex h-full flex-col overflow-hidden rounded-lg border border-stone-200 bg-white shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md">
       <div className="overflow-hidden">
@@ -28,17 +28,20 @@ function ProjectCard({ project }) {
           {project.summary}
         </p>
 
-        <div className="mt-5 flex items-center justify-between gap-4 text-sm">
+        <div className="mt-5 flex flex-wrap items-center justify-between gap-4 text-sm">
           <span className="text-stone-500">
             {project.estimatedMinutes} Minuten
           </span>
-          <Link
-            to="/projects/$id"
-            params={{ id: String(project.id) }}
-            className="font-medium text-emerald-700 hover:text-emerald-900"
-          >
-            Details ansehen
-          </Link>
+          <div className="flex flex-wrap items-center gap-3">
+            {action}
+            <Link
+              to="/projects/$id"
+              params={{ id: String(project.id) }}
+              className="font-medium text-emerald-700 hover:text-emerald-900"
+            >
+              Details ansehen
+            </Link>
+          </div>
         </div>
       </div>
     </article>

@@ -16,6 +16,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProjectsIndexRouteImport } from './routes/projects/index'
 import { Route as ProjectsNewRouteImport } from './routes/projects/new'
 import { Route as ProjectsIdRouteImport } from './routes/projects/$id'
+import { Route as ProjectsIdEditRouteImport } from './routes/projects/$id.edit'
 
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
@@ -52,24 +53,31 @@ const ProjectsIdRoute = ProjectsIdRouteImport.update({
   path: '/projects/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProjectsIdEditRoute = ProjectsIdEditRouteImport.update({
+  id: '/edit',
+  path: '/edit',
+  getParentRoute: () => ProjectsIdRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/my-projects': typeof MyProjectsRoute
   '/register': typeof RegisterRoute
-  '/projects/$id': typeof ProjectsIdRoute
+  '/projects/$id': typeof ProjectsIdRouteWithChildren
   '/projects/new': typeof ProjectsNewRoute
   '/projects/': typeof ProjectsIndexRoute
+  '/projects/$id/edit': typeof ProjectsIdEditRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/my-projects': typeof MyProjectsRoute
   '/register': typeof RegisterRoute
-  '/projects/$id': typeof ProjectsIdRoute
+  '/projects/$id': typeof ProjectsIdRouteWithChildren
   '/projects/new': typeof ProjectsNewRoute
   '/projects': typeof ProjectsIndexRoute
+  '/projects/$id/edit': typeof ProjectsIdEditRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -77,9 +85,10 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/my-projects': typeof MyProjectsRoute
   '/register': typeof RegisterRoute
-  '/projects/$id': typeof ProjectsIdRoute
+  '/projects/$id': typeof ProjectsIdRouteWithChildren
   '/projects/new': typeof ProjectsNewRoute
   '/projects/': typeof ProjectsIndexRoute
+  '/projects/$id/edit': typeof ProjectsIdEditRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -91,6 +100,7 @@ export interface FileRouteTypes {
     | '/projects/$id'
     | '/projects/new'
     | '/projects/'
+    | '/projects/$id/edit'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -100,6 +110,7 @@ export interface FileRouteTypes {
     | '/projects/$id'
     | '/projects/new'
     | '/projects'
+    | '/projects/$id/edit'
   id:
     | '__root__'
     | '/'
@@ -109,6 +120,7 @@ export interface FileRouteTypes {
     | '/projects/$id'
     | '/projects/new'
     | '/projects/'
+    | '/projects/$id/edit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -116,7 +128,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   MyProjectsRoute: typeof MyProjectsRoute
   RegisterRoute: typeof RegisterRoute
-  ProjectsIdRoute: typeof ProjectsIdRoute
+  ProjectsIdRoute: typeof ProjectsIdRouteWithChildren
   ProjectsNewRoute: typeof ProjectsNewRoute
   ProjectsIndexRoute: typeof ProjectsIndexRoute
 }
@@ -172,15 +184,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProjectsIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/projects/$id/edit': {
+      id: '/projects/$id/edit'
+      path: '/edit'
+      fullPath: '/projects/$id/edit'
+      preLoaderRoute: typeof ProjectsIdEditRouteImport
+      parentRoute: typeof ProjectsIdRoute
+    }
   }
 }
+
+interface ProjectsIdRouteChildren {
+  ProjectsIdEditRoute: typeof ProjectsIdEditRoute
+}
+
+const ProjectsIdRouteChildren: ProjectsIdRouteChildren = {
+  ProjectsIdEditRoute: ProjectsIdEditRoute,
+}
+
+const ProjectsIdRouteWithChildren = ProjectsIdRoute._addFileChildren(
+  ProjectsIdRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LoginRoute: LoginRoute,
   MyProjectsRoute: MyProjectsRoute,
   RegisterRoute: RegisterRoute,
-  ProjectsIdRoute: ProjectsIdRoute,
+  ProjectsIdRoute: ProjectsIdRouteWithChildren,
   ProjectsNewRoute: ProjectsNewRoute,
   ProjectsIndexRoute: ProjectsIndexRoute,
 }
