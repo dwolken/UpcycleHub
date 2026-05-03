@@ -9,6 +9,13 @@ export const Route = createFileRoute('/projects/')({
   component: ProjectsPage,
 })
 
+const emptyFilters = {
+  q: '',
+  category: [],
+  difficulty: [],
+  material: [],
+}
+
 function uniqueValues(projects, getValue) {
   return [...new Set(projects.map(getValue).filter(Boolean))].sort()
 }
@@ -16,12 +23,7 @@ function uniqueValues(projects, getValue) {
 function ProjectsPage() {
   const [allProjects, setAllProjects] = useState([])
   const [projects, setProjects] = useState([])
-  const [filters, setFilters] = useState({
-    q: '',
-    category: '',
-    difficulty: '',
-    material: '',
-  })
+  const [filters, setFilters] = useState(emptyFilters)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -61,20 +63,68 @@ function ProjectsPage() {
     [allProjects],
   )
 
-  function updateFilter(name, value) {
+  const hasActiveFilters = useMemo(
+    () =>
+      Boolean(filters.q.trim()) ||
+      filters.category.length > 0 ||
+      filters.difficulty.length > 0 ||
+      filters.material.length > 0,
+    [filters],
+  )
+
+  const activeFilterTags = useMemo(
+    () => [
+      ...filters.category.map((value) => ({
+        label: 'Kategorie',
+        name: 'category',
+        value,
+      })),
+      ...filters.difficulty.map((value) => ({
+        label: 'Schwierigkeit',
+        name: 'difficulty',
+        value,
+      })),
+      ...filters.material.map((value) => ({
+        label: 'Material',
+        name: 'material',
+        value,
+      })),
+    ],
+    [filters],
+  )
+
+  function updateSearch(value) {
     setFilters((currentFilters) => ({
       ...currentFilters,
-      [name]: value,
+      q: value,
+    }))
+  }
+
+  function toggleFilter(name, value) {
+    setFilters((currentFilters) => {
+      const currentValues = currentFilters[name]
+      const nextValues = currentValues.includes(value)
+        ? currentValues.filter((currentValue) => currentValue !== value)
+        : [...currentValues, value]
+
+      return {
+        ...currentFilters,
+        [name]: nextValues,
+      }
+    })
+  }
+
+  function removeFilter(name, value) {
+    setFilters((currentFilters) => ({
+      ...currentFilters,
+      [name]: currentFilters[name].filter(
+        (currentValue) => currentValue !== value,
+      ),
     }))
   }
 
   function resetFilters() {
-    setFilters({
-      q: '',
-      category: '',
-      difficulty: '',
-      material: '',
-    })
+    setFilters(emptyFilters)
   }
 
   return (
@@ -90,76 +140,63 @@ function ProjectsPage() {
       </section>
 
       <section className="rounded-lg border border-stone-200 bg-white p-5 shadow-sm">
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <label className="space-y-2 text-sm font-medium text-stone-700">
             Suche
             <input
               type="search"
               value={filters.q}
-              onChange={(event) => updateFilter('q', event.target.value)}
+              onChange={(event) => updateSearch(event.target.value)}
               placeholder="Titel oder Beschreibung"
-              className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm font-normal text-stone-900 outline-none transition focus:border-emerald-600"
+              className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm font-normal text-stone-900 outline-none transition focus:border-emerald-600 md:w-80"
             />
           </label>
 
-          <label className="space-y-2 text-sm font-medium text-stone-700">
-            Kategorie
-            <select
-              value={filters.category}
-              onChange={(event) => updateFilter('category', event.target.value)}
-              className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm font-normal text-stone-900 outline-none transition focus:border-emerald-600"
-            >
-              <option value="">Alle Kategorien</option>
-              {categories.map((category) => (
-                <option key={category} value={category}>
-                  {category}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="space-y-2 text-sm font-medium text-stone-700">
-            Schwierigkeit
-            <select
-              value={filters.difficulty}
-              onChange={(event) =>
-                updateFilter('difficulty', event.target.value)
-              }
-              className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm font-normal text-stone-900 outline-none transition focus:border-emerald-600"
-            >
-              <option value="">Alle Stufen</option>
-              {difficulties.map((difficulty) => (
-                <option key={difficulty} value={difficulty}>
-                  {difficulty}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="space-y-2 text-sm font-medium text-stone-700">
-            Material
-            <select
-              value={filters.material}
-              onChange={(event) => updateFilter('material', event.target.value)}
-              className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm font-normal text-stone-900 outline-none transition focus:border-emerald-600"
-            >
-              <option value="">Alle Materialien</option>
-              {materials.map((material) => (
-                <option key={material} value={material}>
-                  {material}
-                </option>
-              ))}
-            </select>
-          </label>
+          <button
+            type="button"
+            onClick={resetFilters}
+            disabled={!hasActiveFilters}
+            className="rounded-md px-3 py-2 text-left text-sm font-medium text-emerald-700 transition hover:text-emerald-900 disabled:cursor-not-allowed disabled:text-stone-400 md:text-center"
+          >
+            Filter zurücksetzen
+          </button>
         </div>
 
-        <button
-          type="button"
-          onClick={resetFilters}
-          className="mt-4 text-sm font-medium text-emerald-700 hover:text-emerald-900"
-        >
-          Filter zurücksetzen
-        </button>
+        <div className="mt-5 grid gap-5 lg:grid-cols-3">
+          <FilterGroup
+            title="Kategorien"
+            values={categories}
+            selectedValues={filters.category}
+            onToggle={(value) => toggleFilter('category', value)}
+          />
+          <FilterGroup
+            title="Schwierigkeit"
+            values={difficulties}
+            selectedValues={filters.difficulty}
+            onToggle={(value) => toggleFilter('difficulty', value)}
+          />
+          <FilterGroup
+            title="Materialien"
+            values={materials}
+            selectedValues={filters.material}
+            onToggle={(value) => toggleFilter('material', value)}
+          />
+        </div>
+
+        {activeFilterTags.length > 0 ? (
+          <div className="mt-5 flex flex-wrap gap-2 border-t border-stone-100 pt-4">
+            {activeFilterTags.map((filter) => (
+              <button
+                key={`${filter.name}-${filter.value}`}
+                type="button"
+                onClick={() => removeFilter(filter.name, filter.value)}
+                className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-800 transition hover:border-emerald-300 hover:bg-emerald-100"
+              >
+                {filter.label}: {filter.value} entfernen
+              </button>
+            ))}
+          </div>
+        ) : null}
       </section>
 
       {isLoading ? (
@@ -188,5 +225,38 @@ function ProjectsPage() {
         </p>
       ) : null}
     </div>
+  )
+}
+
+function FilterGroup({ title, values, selectedValues, onToggle }) {
+  return (
+    <fieldset className="space-y-2">
+      <legend className="text-sm font-medium text-stone-700">{title}</legend>
+      {values.length > 0 ? (
+        <div className="flex max-h-40 flex-wrap gap-2 overflow-y-auto pr-1">
+          {values.map((value) => {
+            const isSelected = selectedValues.includes(value)
+
+            return (
+              <button
+                key={value}
+                type="button"
+                aria-pressed={isSelected}
+                onClick={() => onToggle(value)}
+                className={`rounded-full border px-3 py-1.5 text-sm font-medium transition ${
+                  isSelected
+                    ? 'border-emerald-700 bg-emerald-700 text-white hover:bg-emerald-800'
+                    : 'border-stone-300 bg-white text-stone-700 hover:border-emerald-500 hover:text-emerald-800'
+                }`}
+              >
+                {value}
+              </button>
+            )
+          })}
+        </div>
+      ) : (
+        <p className="text-sm text-stone-500">Keine Optionen verfügbar.</p>
+      )}
+    </fieldset>
   )
 }
