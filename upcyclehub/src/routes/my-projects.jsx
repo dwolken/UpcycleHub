@@ -4,6 +4,7 @@ import { Link, createFileRoute } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { getMyProjects } from '../api/projects.js'
 import { useAuth } from '../auth/AuthContext.jsx'
+import DeleteProjectButton from '../components/DeleteProjectButton.jsx'
 import ProjectCard from '../components/ProjectCard.jsx'
 
 export const Route = createFileRoute('/my-projects')({
@@ -15,6 +16,7 @@ function MyProjectsPage() {
   const [projects, setProjects] = useState([])
   const [isLoadingProjects, setIsLoadingProjects] = useState(false)
   const [error, setError] = useState('')
+  const [successMessage, setSuccessMessage] = useState('')
 
   useEffect(() => {
     if (isLoading || !isAuthenticated) {
@@ -24,12 +26,20 @@ function MyProjectsPage() {
 
     setIsLoadingProjects(true)
     setError('')
+    setSuccessMessage('')
 
     getMyProjects()
       .then((data) => setProjects(data))
       .catch(() => setError('Deine Projekte konnten nicht geladen werden.'))
       .finally(() => setIsLoadingProjects(false))
   }, [isAuthenticated, isLoading])
+
+  function handleProjectDeleted(projectId) {
+    setProjects((currentProjects) =>
+      currentProjects.filter((project) => project.id !== projectId),
+    )
+    setSuccessMessage('Projekt wurde geloescht.')
+  }
 
   if (isLoading) {
     return (
@@ -102,6 +112,12 @@ function MyProjectsPage() {
         </p>
       ) : null}
 
+      {successMessage ? (
+        <p className="rounded-lg border border-emerald-200 bg-emerald-50 p-5 text-sm text-emerald-800">
+          {successMessage}
+        </p>
+      ) : null}
+
       {!isLoadingProjects && !error && projects.length > 0 ? (
         <section className="grid gap-4 md:grid-cols-2">
           {projects.map((project) => (
@@ -109,13 +125,20 @@ function MyProjectsPage() {
               key={project.id}
               project={project}
               action={
-                <Link
-                  to="/projects/$id/edit"
-                  params={{ id: String(project.id) }}
-                  className="font-medium text-stone-700 hover:text-stone-950"
-                >
-                  Bearbeiten
-                </Link>
+                <>
+                  <Link
+                    to="/projects/$id/edit"
+                    params={{ id: String(project.id) }}
+                    className="font-medium text-stone-700 hover:text-stone-950"
+                  >
+                    Bearbeiten
+                  </Link>
+                  <DeleteProjectButton
+                    projectId={project.id}
+                    projectTitle={project.title}
+                    onDeleted={handleProjectDeleted}
+                  />
+                </>
               }
             />
           ))}

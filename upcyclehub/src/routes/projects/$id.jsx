@@ -1,9 +1,16 @@
 /* eslint-disable react-hooks/set-state-in-effect, react-refresh/only-export-components */
 
-import { Link, Outlet, createFileRoute, useLocation } from '@tanstack/react-router'
+import {
+  Link,
+  Outlet,
+  createFileRoute,
+  useLocation,
+  useNavigate,
+} from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { getProject } from '../../api/projects.js'
 import { useAuth } from '../../auth/AuthContext.jsx'
+import DeleteProjectButton from '../../components/DeleteProjectButton.jsx'
 
 export const Route = createFileRoute('/projects/$id')({
   component: ProjectDetailPage,
@@ -16,11 +23,16 @@ function formatMaterialAmount(material) {
 function ProjectDetailPage() {
   const { id } = Route.useParams()
   const location = useLocation()
+  const navigate = useNavigate()
   const { user } = useAuth()
   const [project, setProject] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
   const isEditRoute = location.pathname === `/projects/${id}/edit`
+
+  async function handleProjectDeleted() {
+    await navigate({ to: '/my-projects' })
+  }
 
   useEffect(() => {
     if (isEditRoute) {
@@ -75,13 +87,20 @@ function ProjectDetailPage() {
         </Link>
 
         {user?.id === project.owner?.id ? (
-          <Link
-            to="/projects/$id/edit"
-            params={{ id: String(project.id) }}
-            className="rounded-md border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-100"
-          >
-            Projekt bearbeiten
-          </Link>
+          <div className="flex flex-wrap items-center justify-end gap-3">
+            <Link
+              to="/projects/$id/edit"
+              params={{ id: String(project.id) }}
+              className="rounded-md border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-100"
+            >
+              Projekt bearbeiten
+            </Link>
+            <DeleteProjectButton
+              projectId={project.id}
+              projectTitle={project.title}
+              onDeleted={handleProjectDeleted}
+            />
+          </div>
         ) : null}
       </div>
 

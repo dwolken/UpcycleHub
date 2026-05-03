@@ -152,3 +152,10 @@ export function updateProject(id, project) {
     body: project,
   })
 }
+
+export function deleteProject(id) {
+  return request(`/projects/${id}`, {
+    method: 'DELETE',
+    credentials: 'include',
+  })
+}
