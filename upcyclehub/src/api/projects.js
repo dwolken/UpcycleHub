@@ -36,6 +36,21 @@ function normalizeProject(project) {
   }
 }
 
+function normalizeResponseData(data) {
+  if (Array.isArray(data)) {
+    return data.map((project) => normalizeProject(project))
+  }
+
+  if (data?.projects) {
+    return {
+      ...data,
+      projects: data.projects.map((project) => normalizeProject(project)),
+    }
+  }
+
+  return normalizeProject(data)
+}
+
 async function readJsonResponse(response) {
   const text = await response.text()
 
@@ -96,12 +111,12 @@ async function request(path, options = {}) {
       }
 
       if (!response.ok) {
-        throw new Error(result.message || LOAD_ERROR_MESSAGE)
+        const error = new Error(result.message || LOAD_ERROR_MESSAGE)
+        error.status = response.status
+        throw error
       }
 
-      return Array.isArray(result.data)
-        ? result.data.map((project) => normalizeProject(project))
-        : normalizeProject(result.data)
+      return normalizeResponseData(result.data)
     } catch (error) {
       if (error.name !== 'AbortError' && error.name !== 'TypeError') {
         throw error
@@ -129,6 +144,10 @@ export function getProjects(filters = {}) {
 
 export function getProject(id) {
   return request(`/projects/${id}`)
+}
+
+export function getUserProjects(username) {
+  return request(`/users/${encodeURIComponent(username)}/projects`)
 }
 
 export function getMyProjects() {

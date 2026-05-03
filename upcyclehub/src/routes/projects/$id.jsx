@@ -131,6 +131,18 @@ function ProjectDetailPage() {
             <p className="text-lg leading-8 text-stone-700">
               {project.summary}
             </p>
+            {project.owner?.username ? (
+              <p className="text-sm text-stone-500">
+                Erstellt von{' '}
+                <Link
+                  to="/users/$username"
+                  params={{ username: project.owner.username }}
+                  className="font-medium text-emerald-700 hover:text-emerald-900"
+                >
+                  {project.owner.username}
+                </Link>
+              </p>
+            ) : null}
           </div>
         </div>
       </section>
