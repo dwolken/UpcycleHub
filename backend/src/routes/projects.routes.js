@@ -145,6 +145,39 @@ function cleanText(value) {
   return String(value || '').trim()
 }
 
+function cleanQueryValues(value) {
+  const values = Array.isArray(value) ? value : value ? [value] : []
+  const seenValues = new Set()
+
+  return values
+    .map((item) => cleanText(item))
+    .filter(Boolean)
+    .filter((item) => {
+      const normalizedItem = item.toLowerCase()
+
+      if (seenValues.has(normalizedItem)) {
+        return false
+      }
+
+      seenValues.add(normalizedItem)
+      return true
+    })
+}
+
+function addMultiValueFilter(conditions, params, field, paramName, values) {
+  if (values.length === 0) {
+    return
+  }
+
+  const placeholders = values.map((value, index) => {
+    const key = `${paramName}${index}`
+    params[key] = value.toLowerCase()
+    return `@${key}`
+  })
+
+  conditions.push(`LOWER(${field}) IN (${placeholders.join(', ')})`)
+}
+
 function sendValidationError(res, message) {
   return res.status(400).json({ message })
 }
@@ -344,31 +377,33 @@ router.get('/', (req, res) => {
   const { category, difficulty, material, q } = req.query
   const conditions = []
   const params = {}
+  const categories = cleanQueryValues(category)
+  const difficulties = cleanQueryValues(difficulty)
+  const materials = cleanQueryValues(material)
+  const searchTerm = cleanText(q)
 
-  if (category) {
-    conditions.push('LOWER(c.c_name) = LOWER(@category)')
-    params.category = category
-  }
+  addMultiValueFilter(conditions, params, 'c.c_name', 'category', categories)
+  addMultiValueFilter(conditions, params, 'd.d_name', 'difficulty', difficulties)
 
-  if (difficulty) {
-    conditions.push('LOWER(d.d_name) = LOWER(@difficulty)')
-    params.difficulty = difficulty
-  }
+  if (materials.length > 0) {
+    const materialPlaceholders = materials.map((value, index) => {
+      const key = `material${index}`
+      params[key] = value.toLowerCase()
+      return `@${key}`
+    })
 
-  if (material) {
     conditions.push(`
       EXISTS (
         SELECT 1
         FROM project_materials pm_filter
         JOIN materials m_filter ON m_filter.m_id = pm_filter.pm_m_id
         WHERE pm_filter.pm_p_id = p.p_id
-          AND LOWER(m_filter.m_name) = LOWER(@material)
+          AND LOWER(m_filter.m_name) IN (${materialPlaceholders.join(', ')})
       )
     `)
-    params.material = material
   }
 
-  if (q) {
+  if (searchTerm) {
     conditions.push(`
       (
         LOWER(p.p_title) LIKE LOWER(@search)
@@ -383,7 +418,7 @@ router.get('/', (req, res) => {
         )
       )
     `)
-    params.search = `%${q}%`
+    params.search = `%${searchTerm}%`
   }
 
   const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''

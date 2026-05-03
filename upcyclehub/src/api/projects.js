@@ -133,6 +133,15 @@ export function getProjects(filters = {}) {
   const params = new URLSearchParams()
 
   Object.entries(filters).forEach(([key, value]) => {
+    if (Array.isArray(value)) {
+      value.forEach((item) => {
+        if (item) {
+          params.append(key, item)
+        }
+      })
+      return
+    }
+
     if (value) {
       params.set(key, value)
     }
