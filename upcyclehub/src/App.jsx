@@ -2,7 +2,11 @@ import { Link } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { getProjects } from './api/projects.js'
 import ProjectCard from './components/ProjectCard.jsx'
-import StatusMessage from './components/StatusMessage.jsx'
+import {
+  EmptyState,
+  ErrorState,
+  LoadingState,
+} from './components/StatusMessage.jsx'
 
 function getRandomProjects(projects, count = 3) {
   const shuffledProjects = [...projects]
@@ -106,9 +110,7 @@ function App() {
         </div>
 
         {isLoadingRecommendations ? (
-          <p className="rounded-lg border border-stone-200 bg-white p-5 text-sm text-stone-600">
-            Projekte werden geladen.
-          </p>
+          <LoadingState>Projekte werden geladen.</LoadingState>
         ) : null}
 
         {!isLoadingRecommendations && !recommendationError && recommendedProjects.length > 0 ? (
@@ -120,15 +122,23 @@ function App() {
         ) : null}
 
         {!isLoadingRecommendations && recommendationError ? (
-          <StatusMessage variant="error">{recommendationError}</StatusMessage>
+          <ErrorState
+            title="Empfehlungen konnten nicht geladen werden."
+            actions={[{ to: '/projects', label: 'Alle Projekte ansehen' }]}
+          >
+            {recommendationError}
+          </ErrorState>
         ) : null}
 
         {!isLoadingRecommendations &&
         !recommendationError &&
         recommendedProjects.length === 0 ? (
-          <StatusMessage>
+          <EmptyState
+            title="Noch keine Empfehlungen verfügbar."
+            actions={[{ to: '/projects', label: 'Alle Projekte ansehen' }]}
+          >
             Es sind noch keine empfohlenen Projekte verfügbar.
-          </StatusMessage>
+          </EmptyState>
         ) : null}
       </section>
     </div>

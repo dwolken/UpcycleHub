@@ -5,7 +5,11 @@ import { useEffect, useMemo, useState } from 'react'
 import { toUserMessage } from '../../api/apiErrors.js'
 import { getProjects } from '../../api/projects.js'
 import ProjectCard from '../../components/ProjectCard.jsx'
-import StatusMessage from '../../components/StatusMessage.jsx'
+import {
+  EmptyState,
+  ErrorState,
+  LoadingState,
+} from '../../components/StatusMessage.jsx'
 
 export const Route = createFileRoute('/projects/')({
   component: ProjectsPage,
@@ -190,13 +194,16 @@ function ProjectsPage() {
       </section>
 
       {isLoading ? (
-        <p className="rounded-lg border border-stone-200 bg-white p-5 text-sm text-stone-600">
-          Projekte werden geladen.
-        </p>
+        <LoadingState>Projekte werden geladen.</LoadingState>
       ) : null}
 
       {error ? (
-        <StatusMessage variant="error">{error}</StatusMessage>
+        <ErrorState
+          title="Projekte konnten nicht geladen werden."
+          actions={[{ to: '/', label: 'Zur Startseite' }]}
+        >
+          {error}
+        </ErrorState>
       ) : null}
 
       {!isLoading && !error ? (
@@ -208,9 +215,17 @@ function ProjectsPage() {
       ) : null}
 
       {!isLoading && !error && projects.length === 0 ? (
-        <p className="rounded-lg border border-stone-200 bg-white p-5 text-sm text-stone-600">
-          Zu diesen Filtern wurden keine Projekte gefunden.
-        </p>
+        <EmptyState
+          title="Keine passenden Projekte gefunden."
+          actions={
+            hasActiveFilters
+              ? [{ label: 'Filter zurücksetzen', onClick: resetFilters }]
+              : []
+          }
+        >
+          Es wurden keine passenden Projekte gefunden. Passe die Filter an oder
+          entferne sie, um wieder mehr Projekte zu sehen.
+        </EmptyState>
       ) : null}
     </div>
   )

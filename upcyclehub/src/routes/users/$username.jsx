@@ -5,7 +5,12 @@ import { useEffect, useState } from 'react'
 import { toUserMessage } from '../../api/apiErrors.js'
 import { getUserProjects } from '../../api/projects.js'
 import ProjectCard from '../../components/ProjectCard.jsx'
-import StatusMessage from '../../components/StatusMessage.jsx'
+import {
+  EmptyState,
+  ErrorState,
+  LoadingState,
+  NotFoundState,
+} from '../../components/StatusMessage.jsx'
 
 export const Route = createFileRoute('/users/$username')({
   component: AuthorPage,
@@ -40,21 +45,25 @@ function AuthorPage() {
   }, [username])
 
   if (isLoading) {
-    return (
-      <p className="rounded-lg border border-stone-200 bg-white p-5 text-sm text-stone-600">
-        Projekte werden geladen.
-      </p>
-    )
+    return <LoadingState>Projekte werden geladen.</LoadingState>
   }
 
   if (error) {
+    if (error === 'Benutzer wurde nicht gefunden.') {
+      return (
+        <NotFoundState title="Benutzer wurde nicht gefunden.">
+          Für diesen Benutzernamen gibt es keine öffentliche Autorenseite.
+        </NotFoundState>
+      )
+    }
+
     return (
-      <StatusMessage
-        variant="error"
-        link={{ to: '/projects', label: 'Zurück zur Übersicht' }}
+      <ErrorState
+        title="Autorenseite konnte nicht geladen werden."
+        actions={[{ to: '/projects', label: 'Zurück zur Übersicht' }]}
       >
         {error}
-      </StatusMessage>
+      </ErrorState>
     )
   }
 
@@ -84,9 +93,9 @@ function AuthorPage() {
           ))}
         </section>
       ) : (
-        <p className="rounded-lg border border-stone-200 bg-white p-5 text-sm text-stone-600">
-          Diese Person hat noch keine öffentlichen Projekte erstellt.
-        </p>
+        <EmptyState title="Noch keine öffentlichen Projekte.">
+          Diese Person hat noch keine öffentlichen Upcycling-Projekte erstellt.
+        </EmptyState>
       )}
     </div>
   )

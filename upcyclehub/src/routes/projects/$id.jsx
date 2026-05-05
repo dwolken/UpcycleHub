@@ -12,7 +12,11 @@ import { toUserMessage } from '../../api/apiErrors.js'
 import { getProject } from '../../api/projects.js'
 import { useAuth } from '../../auth/AuthContext.jsx'
 import DeleteProjectButton from '../../components/DeleteProjectButton.jsx'
-import StatusMessage from '../../components/StatusMessage.jsx'
+import {
+  ErrorState,
+  LoadingState,
+  NotFoundState,
+} from '../../components/StatusMessage.jsx'
 
 export const Route = createFileRoute('/projects/$id')({
   component: ProjectDetailPage,
@@ -62,21 +66,25 @@ function ProjectDetailPage() {
   }
 
   if (isLoading) {
-    return (
-      <p className="rounded-lg border border-stone-200 bg-white p-5 text-sm text-stone-600">
-        Projekt wird geladen.
-      </p>
-    )
+    return <LoadingState>Projekt wird geladen.</LoadingState>
   }
 
   if (error || !project) {
+    if (error === 'Projekt wurde nicht gefunden.' || !project) {
+      return (
+        <NotFoundState title="Projekt wurde nicht gefunden.">
+          Das gesuchte Projekt ist nicht verfügbar oder wurde gelöscht.
+        </NotFoundState>
+      )
+    }
+
     return (
-      <StatusMessage
-        variant={error ? 'error' : 'neutral'}
-        link={{ to: '/projects', label: 'Zurück zur Übersicht' }}
+      <ErrorState
+        title="Projekt konnte nicht geladen werden."
+        actions={[{ to: '/projects', label: 'Zurück zur Übersicht' }]}
       >
-        {error || 'Projekt wurde nicht gefunden.'}
-      </StatusMessage>
+        {error}
+      </ErrorState>
     )
   }
 

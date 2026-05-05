@@ -7,7 +7,13 @@ import { getMyProjects } from '../api/projects.js'
 import { useAuth } from '../auth/AuthContext.jsx'
 import DeleteProjectButton from '../components/DeleteProjectButton.jsx'
 import ProjectCard from '../components/ProjectCard.jsx'
-import StatusMessage from '../components/StatusMessage.jsx'
+import {
+  AuthRequiredState,
+  EmptyState,
+  ErrorState,
+  LoadingState,
+  SuccessState,
+} from '../components/StatusMessage.jsx'
 
 export const Route = createFileRoute('/my-projects')({
   component: MyProjectsPage,
@@ -54,41 +60,15 @@ function MyProjectsPage() {
   }
 
   if (isLoading) {
-    return (
-      <p className="rounded-lg border border-stone-200 bg-white p-5 text-sm text-stone-600">
-        Anmeldung wird geprüft.
-      </p>
-    )
+    return <LoadingState>Anmeldung wird geprüft.</LoadingState>
   }
 
   if (!isAuthenticated) {
     return (
-      <section className="space-y-5 rounded-lg border border-stone-200 bg-white p-6 shadow-sm">
-        <div className="space-y-2">
-          <h1 className="text-2xl font-semibold text-stone-950">
-            Anmeldung erforderlich
-          </h1>
-          <p className="max-w-2xl text-sm leading-6 text-stone-600">
-            Melde dich an oder erstelle ein Konto, um deine eigenen Projekte zu
-            sehen.
-          </p>
-        </div>
-
-        <div className="flex flex-wrap gap-3">
-          <Link
-            to="/login"
-            className="rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-800"
-          >
-            Anmelden
-          </Link>
-          <Link
-            to="/register"
-            className="rounded-md border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-800"
-          >
-            Registrieren
-          </Link>
-        </div>
-      </section>
+      <AuthRequiredState>
+        Melde dich an oder erstelle ein Konto, um deine eigenen Projekte zu
+        sehen.
+      </AuthRequiredState>
     )
   }
 
@@ -113,17 +93,17 @@ function MyProjectsPage() {
       </section>
 
       {isLoadingProjects ? (
-        <p className="rounded-lg border border-stone-200 bg-white p-5 text-sm text-stone-600">
-          Projekte werden geladen.
-        </p>
+        <LoadingState>Projekte werden geladen.</LoadingState>
       ) : null}
 
       {error ? (
-        <StatusMessage variant="error">{error}</StatusMessage>
+        <ErrorState title="Meine Projekte konnten nicht geladen werden.">
+          {error}
+        </ErrorState>
       ) : null}
 
       {successMessage ? (
-        <StatusMessage variant="success">{successMessage}</StatusMessage>
+        <SuccessState>{successMessage}</SuccessState>
       ) : null}
 
       {!isLoadingProjects && !error && projects.length > 0 ? (
@@ -154,17 +134,14 @@ function MyProjectsPage() {
       ) : null}
 
       {!isLoadingProjects && !error && projects.length === 0 ? (
-        <section className="space-y-4 rounded-lg border border-stone-200 bg-white p-5 shadow-sm">
-          <p className="text-sm text-stone-600">
-            Du hast noch keine eigenen Projekte.
-          </p>
-          <Link
-            to="/projects/new"
-            className="inline-flex rounded-md bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-800"
-          >
-            Erstes Projekt erstellen
-          </Link>
-        </section>
+        <EmptyState
+          title="Noch keine eigenen Projekte."
+          actions={[
+            { to: '/projects/new', label: 'Erstes Projekt erstellen', variant: 'primary' },
+          ]}
+        >
+          Erstelle dein erstes Upcycling-Projekt, damit es hier erscheint.
+        </EmptyState>
       ) : null}
     </div>
   )

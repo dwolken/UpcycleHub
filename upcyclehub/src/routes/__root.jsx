@@ -10,11 +10,20 @@ import { useState } from 'react'
 import { toUserMessage } from '../api/apiErrors.js'
 import { AuthProvider, useAuth } from '../auth/AuthContext.jsx'
 import AppIcon from '../components/AppIcon.jsx'
-import StatusMessage from '../components/StatusMessage.jsx'
+import { ErrorState, NotFoundState } from '../components/StatusMessage.jsx'
 
 export const Route = createRootRoute({
   component: RootLayout,
+  notFoundComponent: RootNotFoundPage,
 })
+
+function RootNotFoundPage() {
+  return (
+    <NotFoundState title="Seite nicht gefunden.">
+      Diese Seite gibt es auf UpcycleHub nicht oder sie wurde verschoben.
+    </NotFoundState>
+  )
+}
 
 function RootLayout() {
   return (
@@ -130,7 +139,9 @@ function RootLayoutContent() {
       <main className="mx-auto max-w-5xl px-6 py-10">
         {logoutError ? (
           <div className="mb-6">
-            <StatusMessage variant="error">{logoutError}</StatusMessage>
+            <ErrorState title="Abmeldung nicht vollständig abgeschlossen.">
+              {logoutError}
+            </ErrorState>
           </div>
         ) : null}
         <Outlet />
