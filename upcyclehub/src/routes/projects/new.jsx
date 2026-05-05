@@ -2,6 +2,7 @@
 
 import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useEffect, useMemo, useState } from 'react'
+import { toUserMessage } from '../../api/apiErrors.js'
 import { createProject, getProjects } from '../../api/projects.js'
 import { useAuth } from '../../auth/AuthContext.jsx'
 
@@ -232,10 +233,13 @@ function NewProjectPage() {
 
     getProjects()
       .then((data) => setProjects(data))
-      .catch(() =>
+      .catch((requestError) =>
         setErrors({
           ...emptyValidationErrors,
-          form: 'Kategorien und Schwierigkeitsstufen konnten nicht geladen werden.',
+          form: toUserMessage(
+            requestError,
+            'Kategorien und Schwierigkeitsstufen konnten nicht geladen werden.',
+          ),
         }),
       )
       .finally(() => setIsLoadingOptions(false))
@@ -478,7 +482,14 @@ function NewProjectPage() {
     } catch (submitError) {
       setErrors({
         ...emptyValidationErrors,
-        form: submitError.message || 'Das Projekt konnte nicht erstellt werden.',
+        form: toUserMessage(
+          submitError,
+          'Das Projekt konnte nicht erstellt werden.',
+          {
+            401: 'Bitte melde dich an, um ein Projekt zu erstellen.',
+            403: 'Diese Aktion ist nicht erlaubt.',
+          },
+        ),
       })
     } finally {
       setIsSubmitting(false)

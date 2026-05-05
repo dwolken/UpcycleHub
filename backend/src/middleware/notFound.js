@@ -1,7 +1,7 @@
+const { sendError } = require('../utils/apiResponses')
+
 function notFound(req, res) {
-  res.status(404).json({
-    message: 'Route wurde nicht gefunden.',
-  })
+  return sendError(res, 'Route wurde nicht gefunden.', 404)
 }
 
 module.exports = notFound

@@ -2,8 +2,10 @@
 
 import { createFileRoute } from '@tanstack/react-router'
 import { useEffect, useMemo, useState } from 'react'
+import { toUserMessage } from '../../api/apiErrors.js'
 import { getProjects } from '../../api/projects.js'
 import ProjectCard from '../../components/ProjectCard.jsx'
+import StatusMessage from '../../components/StatusMessage.jsx'
 
 export const Route = createFileRoute('/projects/')({
   component: ProjectsPage,
@@ -40,7 +42,11 @@ function ProjectsPage() {
 
     getProjects(filters)
       .then((data) => setProjects(data))
-      .catch(() => setError('Die Projekte konnten nicht geladen werden.'))
+      .catch((requestError) =>
+        setError(
+          toUserMessage(requestError, 'Die Projekte konnten nicht geladen werden.'),
+        ),
+      )
       .finally(() => setIsLoading(false))
   }, [filters])
 
@@ -190,9 +196,7 @@ function ProjectsPage() {
       ) : null}
 
       {error ? (
-        <p className="rounded-lg border border-stone-200 bg-white p-5 text-sm text-stone-600">
-          {error}
-        </p>
+        <StatusMessage variant="error">{error}</StatusMessage>
       ) : null}
 
       {!isLoading && !error ? (

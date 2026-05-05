@@ -2,6 +2,7 @@
 
 import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
+import { toUserMessage } from '../api/apiErrors.js'
 import { useAuth } from '../auth/AuthContext.jsx'
 
 export const Route = createFileRoute('/login')({
@@ -45,7 +46,12 @@ function LoginPage() {
       await login(formData)
       await navigate({ to: '/my-projects' })
     } catch (loginError) {
-      setError(loginError.message)
+      setError(
+        toUserMessage(
+          loginError,
+          'Die Anmeldung konnte nicht abgeschlossen werden.',
+        ),
+      )
     } finally {
       setIsSubmitting(false)
     }

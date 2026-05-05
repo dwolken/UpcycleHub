@@ -1,9 +1,11 @@
+import {
+  NETWORK_ERROR_MESSAGE,
+  RESPONSE_ERROR_MESSAGE,
+  createApiError,
+} from './apiErrors.js'
+
 const API_BASE_URL = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '')
 const BACKEND_PORT = '3000'
-const RESPONSE_ERROR_MESSAGE =
-  'Die Serverantwort konnte nicht gelesen werden.'
-const NETWORK_ERROR_MESSAGE =
-  'Der Server ist nicht erreichbar. Bitte starte das Backend.'
 
 function getApiBaseUrls() {
   const urls = [API_BASE_URL]
@@ -63,7 +65,11 @@ async function authRequest(path, options = {}) {
       }
 
       if (!response.ok) {
-        throw new Error(result?.message || RESPONSE_ERROR_MESSAGE)
+        throw createApiError(
+          response,
+          result,
+          options.fallbackMessage || RESPONSE_ERROR_MESSAGE,
+        )
       }
 
       return result.data
@@ -88,6 +94,7 @@ export function loginUser({ username, password }) {
   return authRequest('/auth/login', {
     method: 'POST',
     body: { username, password },
+    fallbackMessage: 'Die Anmeldung konnte nicht abgeschlossen werden.',
   })
 }
 
@@ -95,11 +102,13 @@ export function registerUser({ username, password }) {
   return authRequest('/auth/register', {
     method: 'POST',
     body: { username, password },
+    fallbackMessage: 'Die Registrierung konnte nicht abgeschlossen werden.',
   })
 }
 
 export function logoutUser() {
   return authRequest('/auth/logout', {
     method: 'POST',
+    fallbackMessage: 'Die Abmeldung konnte nicht abgeschlossen werden.',
   })
 }

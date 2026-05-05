@@ -1,5 +1,6 @@
 const express = require('express')
 const db = require('../db')
+const { sendError } = require('../utils/apiResponses')
 
 const router = express.Router()
 
@@ -63,9 +64,7 @@ router.get('/:username/projects', (req, res) => {
     .get(req.params.username)
 
   if (!user) {
-    return res.status(404).json({
-      message: 'Benutzer wurde nicht gefunden.',
-    })
+    return sendError(res, 'Benutzer wurde nicht gefunden.', 404)
   }
 
   const rows = db

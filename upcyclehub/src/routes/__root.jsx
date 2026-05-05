@@ -6,8 +6,11 @@ import {
   useNavigate,
   createRootRoute,
 } from '@tanstack/react-router'
+import { useState } from 'react'
+import { toUserMessage } from '../api/apiErrors.js'
 import { AuthProvider, useAuth } from '../auth/AuthContext.jsx'
 import AppIcon from '../components/AppIcon.jsx'
+import StatusMessage from '../components/StatusMessage.jsx'
 
 export const Route = createRootRoute({
   component: RootLayout,
@@ -24,6 +27,7 @@ function RootLayout() {
 function RootLayoutContent() {
   const navigate = useNavigate()
   const { isAuthenticated, isLoading, logout, user } = useAuth()
+  const [logoutError, setLogoutError] = useState('')
   const linkClassName =
     'rounded-md px-3 py-2 text-sm font-medium text-stone-600 transition hover:bg-stone-100 hover:text-stone-950'
   const loginLinkClassName =
@@ -34,7 +38,16 @@ function RootLayoutContent() {
     'rounded-md bg-stone-800 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-stone-900'
 
   async function handleLogout() {
-    await logout()
+    setLogoutError('')
+
+    try {
+      await logout()
+    } catch (error) {
+      setLogoutError(
+        toUserMessage(error, 'Die Abmeldung konnte nicht abgeschlossen werden.'),
+      )
+    }
+
     await navigate({ to: '/' })
   }
 
@@ -115,6 +128,11 @@ function RootLayoutContent() {
       </header>
 
       <main className="mx-auto max-w-5xl px-6 py-10">
+        {logoutError ? (
+          <div className="mb-6">
+            <StatusMessage variant="error">{logoutError}</StatusMessage>
+          </div>
+        ) : null}
         <Outlet />
       </main>
     </div>

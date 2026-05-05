@@ -2,8 +2,10 @@
 
 import { Link, createFileRoute } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
+import { toUserMessage } from '../../api/apiErrors.js'
 import { getUserProjects } from '../../api/projects.js'
 import ProjectCard from '../../components/ProjectCard.jsx'
+import StatusMessage from '../../components/StatusMessage.jsx'
 
 export const Route = createFileRoute('/users/$username')({
   component: AuthorPage,
@@ -29,9 +31,9 @@ function AuthorPage() {
         setAuthor(null)
         setProjects([])
         setError(
-          requestError.status === 404
-            ? 'Diese Autorenseite wurde nicht gefunden.'
-            : 'Die Projekte konnten nicht geladen werden.',
+          toUserMessage(requestError, 'Die Projekte konnten nicht geladen werden.', {
+            404: 'Benutzer wurde nicht gefunden.',
+          }),
         )
       })
       .finally(() => setIsLoading(false))
@@ -47,15 +49,12 @@ function AuthorPage() {
 
   if (error) {
     return (
-      <section className="space-y-4 rounded-lg border border-stone-200 bg-white p-5 shadow-sm">
-        <p className="text-sm text-stone-600">{error}</p>
-        <Link
-          to="/projects"
-          className="text-sm font-medium text-emerald-700 hover:text-emerald-900"
-        >
-          Zurück zur Übersicht
-        </Link>
-      </section>
+      <StatusMessage
+        variant="error"
+        link={{ to: '/projects', label: 'Zurück zur Übersicht' }}
+      >
+        {error}
+      </StatusMessage>
     )
   }
 

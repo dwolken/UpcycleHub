@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { toUserMessage } from '../api/apiErrors.js'
 import { deleteProject } from '../api/projects.js'
 
 function DeleteProjectButton({ projectId, projectTitle, onDeleted }) {
@@ -14,7 +15,13 @@ function DeleteProjectButton({ projectId, projectTitle, onDeleted }) {
       await deleteProject(projectId)
       await onDeleted?.(projectId)
     } catch (deleteError) {
-      setError(deleteError.message || 'Projekt konnte nicht gelöscht werden.')
+      setError(
+        toUserMessage(deleteError, 'Das Projekt konnte nicht gelöscht werden.', {
+          401: 'Bitte melde dich an, um das Projekt zu löschen.',
+          403: 'Diese Aktion ist nicht erlaubt.',
+          404: 'Projekt wurde nicht gefunden.',
+        }),
+      )
       setIsDeleting(false)
     }
   }

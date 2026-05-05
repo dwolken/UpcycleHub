@@ -2,10 +2,12 @@
 
 import { Link, createFileRoute } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
+import { toUserMessage } from '../api/apiErrors.js'
 import { getMyProjects } from '../api/projects.js'
 import { useAuth } from '../auth/AuthContext.jsx'
 import DeleteProjectButton from '../components/DeleteProjectButton.jsx'
 import ProjectCard from '../components/ProjectCard.jsx'
+import StatusMessage from '../components/StatusMessage.jsx'
 
 export const Route = createFileRoute('/my-projects')({
   component: MyProjectsPage,
@@ -30,7 +32,17 @@ function MyProjectsPage() {
 
     getMyProjects()
       .then((data) => setProjects(data))
-      .catch(() => setError('Deine Projekte konnten nicht geladen werden.'))
+      .catch((requestError) =>
+        setError(
+          toUserMessage(
+            requestError,
+            'Deine Projekte konnten nicht geladen werden.',
+            {
+              401: 'Bitte melde dich an, um deine Projekte zu sehen.',
+            },
+          ),
+        ),
+      )
       .finally(() => setIsLoadingProjects(false))
   }, [isAuthenticated, isLoading])
 
@@ -38,7 +50,7 @@ function MyProjectsPage() {
     setProjects((currentProjects) =>
       currentProjects.filter((project) => project.id !== projectId),
     )
-    setSuccessMessage('Projekt wurde geloescht.')
+    setSuccessMessage('Projekt wurde gelöscht.')
   }
 
   if (isLoading) {
@@ -107,15 +119,11 @@ function MyProjectsPage() {
       ) : null}
 
       {error ? (
-        <p className="rounded-lg border border-stone-200 bg-white p-5 text-sm text-stone-600">
-          {error}
-        </p>
+        <StatusMessage variant="error">{error}</StatusMessage>
       ) : null}
 
       {successMessage ? (
-        <p className="rounded-lg border border-emerald-200 bg-emerald-50 p-5 text-sm text-emerald-800">
-          {successMessage}
-        </p>
+        <StatusMessage variant="success">{successMessage}</StatusMessage>
       ) : null}
 
       {!isLoadingProjects && !error && projects.length > 0 ? (

@@ -1,10 +1,15 @@
+import {
+  LOAD_ERROR_MESSAGE,
+  NETWORK_ERROR_MESSAGE,
+  createApiError,
+} from './apiErrors.js'
+
 const API_BASE_URL = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '')
 const API_ORIGIN = API_BASE_URL.startsWith('http')
   ? API_BASE_URL.replace(/\/api\/?$/, '')
   : ''
 const BACKEND_PORT = '3000'
 const REQUEST_TIMEOUT_MS = 8000
-const LOAD_ERROR_MESSAGE = 'Daten konnten nicht geladen werden.'
 
 function getApiBaseUrls() {
   const urls = [API_BASE_URL]
@@ -111,9 +116,7 @@ async function request(path, options = {}) {
       }
 
       if (!response.ok) {
-        const error = new Error(result.message || LOAD_ERROR_MESSAGE)
-        error.status = response.status
-        throw error
+        throw createApiError(response, result, LOAD_ERROR_MESSAGE)
       }
 
       return normalizeResponseData(result.data)
@@ -126,7 +129,7 @@ async function request(path, options = {}) {
     }
   }
 
-  throw new Error(LOAD_ERROR_MESSAGE)
+  throw new Error(NETWORK_ERROR_MESSAGE)
 }
 
 export function getProjects(filters = {}) {

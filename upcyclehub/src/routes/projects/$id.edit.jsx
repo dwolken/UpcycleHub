@@ -2,6 +2,7 @@
 
 import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useEffect, useMemo, useState } from 'react'
+import { toUserMessage } from '../../api/apiErrors.js'
 import { getProject, getProjects, updateProject } from '../../api/projects.js'
 import { useAuth } from '../../auth/AuthContext.jsx'
 
@@ -156,11 +157,11 @@ function validateForm(form, hasCurrentImage) {
   }
 
   if (!form.categoryId) {
-    errors.fields.categoryId = 'Bitte waehle eine Kategorie.'
+    errors.fields.categoryId = 'Bitte wähle eine Kategorie.'
   }
 
   if (!form.difficultyId) {
-    errors.fields.difficultyId = 'Bitte waehle eine Schwierigkeit.'
+    errors.fields.difficultyId = 'Bitte wähle eine Schwierigkeit.'
   }
 
   if (!form.summary.trim()) {
@@ -175,13 +176,13 @@ function validateForm(form, hasCurrentImage) {
     !Number.isInteger(Number(form.estimatedMinutes)) ||
     Number(form.estimatedMinutes) < 1
   ) {
-    errors.fields.estimatedMinutes = 'Bitte gib eine gueltige Dauer ein.'
+    errors.fields.estimatedMinutes = 'Bitte gib eine gültige Dauer ein.'
   }
 
   if (!form.imageFile && !hasCurrentImage) {
-    errors.fields.imageFile = 'Bitte waehle ein Bild aus.'
+    errors.fields.imageFile = 'Bitte wähle ein Bild aus.'
   } else if (form.imageFile && !allowedImageTypes.includes(form.imageFile.type)) {
-    errors.fields.imageFile = 'Bitte waehle eine gueltige Bilddatei aus.'
+    errors.fields.imageFile = 'Bitte wähle eine gültige Bilddatei aus.'
   }
 
   const filledMaterialNames = []
@@ -222,7 +223,7 @@ function validateForm(form, hasCurrentImage) {
 
     errors.materials.section = hasAnyMaterialInput
       ? ''
-      : 'Bitte fuege mindestens ein Material hinzu.'
+      : 'Bitte füge mindestens ein Material hinzu.'
   }
 
   const seenMaterialNames = new Map()
@@ -250,7 +251,7 @@ function validateForm(form, hasCurrentImage) {
   })
 
   if (!hasCompleteStep) {
-    errors.steps.section = 'Bitte fuege mindestens einen Schritt hinzu.'
+    errors.steps.section = 'Bitte füge mindestens einen Schritt hinzu.'
   }
 
   return errors
@@ -285,25 +286,69 @@ function EditProjectPage() {
       return
     }
 
+    let isActive = true
+
     setIsLoadingProject(true)
     setErrors(emptyValidationErrors)
 
-    Promise.all([getProject(id), getProjects()])
-      .then(([projectData, projectsData]) => {
+    async function loadProject() {
+      try {
+        const projectData = await getProject(id)
+
+        if (!isActive) {
+          return
+        }
+
         const loadedForm = projectToForm(projectData)
         setProject(projectData)
-        setProjects(projectsData)
         setForm(loadedForm)
         setOriginalForm(loadedForm)
         setImagePreviewUrl('')
-      })
-      .catch(() =>
+
+        try {
+          const projectsData = await getProjects()
+
+          if (isActive) {
+            setProjects(projectsData)
+          }
+        } catch (optionsError) {
+          if (!isActive) {
+            return
+          }
+
+          setProjects([])
+          setErrors({
+            ...emptyValidationErrors,
+            form: toUserMessage(
+              optionsError,
+              'Kategorien und Schwierigkeitsstufen konnten nicht geladen werden.',
+            ),
+          })
+        }
+      } catch (requestError) {
+        if (!isActive) {
+          return
+        }
+
+        setProject(null)
         setErrors({
           ...emptyValidationErrors,
-          form: 'Das Projekt konnte nicht geladen werden.',
-        }),
-      )
-      .finally(() => setIsLoadingProject(false))
+          form: toUserMessage(requestError, 'Das Projekt konnte nicht geladen werden.', {
+            404: 'Projekt wurde nicht gefunden.',
+          }),
+        })
+      } finally {
+        if (isActive) {
+          setIsLoadingProject(false)
+        }
+      }
+    }
+
+    loadProject()
+
+    return () => {
+      isActive = false
+    }
   }, [id, isAuthenticated, isLoading])
 
   const categories = useMemo(
@@ -372,7 +417,7 @@ function EditProjectPage() {
         ...currentErrors.fields,
         imageFile:
           file && !allowedImageTypes.includes(file.type)
-            ? 'Bitte waehle eine gueltige Bilddatei aus.'
+            ? 'Bitte wähle eine gültige Bilddatei aus.'
             : '',
       },
       form: '',
@@ -566,7 +611,15 @@ function EditProjectPage() {
     } catch (submitError) {
       setErrors({
         ...emptyValidationErrors,
-        form: submitError.message || 'Das Projekt konnte nicht gespeichert werden.',
+        form: toUserMessage(
+          submitError,
+          'Das Projekt konnte nicht gespeichert werden.',
+          {
+            401: 'Bitte melde dich an, um das Projekt zu speichern.',
+            403: 'Diese Aktion ist nicht erlaubt.',
+            404: 'Projekt wurde nicht gefunden.',
+          },
+        ),
       })
     } finally {
       setIsSubmitting(false)
@@ -576,7 +629,7 @@ function EditProjectPage() {
   if (isLoading) {
     return (
       <p className="rounded-lg border border-stone-200 bg-white p-5 text-sm text-stone-600">
-        Anmeldung wird geprueft.
+        Anmeldung wird geprüft.
       </p>
     )
   }
@@ -627,7 +680,7 @@ function EditProjectPage() {
           to="/my-projects"
           className="text-sm font-medium text-emerald-700 hover:text-emerald-900"
         >
-          Zurueck zu meinen Projekten
+          Zurück zu meinen Projekten
         </Link>
       </section>
     )
@@ -660,7 +713,7 @@ function EditProjectPage() {
           to="/my-projects"
           className="inline-flex text-sm font-medium text-emerald-700 hover:text-emerald-900"
         >
-          Zurueck zu meinen Projekten
+          Zurück zu meinen Projekten
         </Link>
         <h1 className="text-3xl font-semibold text-stone-950">
           Projekt bearbeiten
@@ -694,7 +747,7 @@ function EditProjectPage() {
                 aria-invalid={Boolean(errors.fields.categoryId)}
                 className={fieldClassName(errors.fields.categoryId)}
               >
-                <option value="">Kategorie waehlen</option>
+                <option value="">Kategorie wählen</option>
                 {categories.map((category) => (
                   <option key={category.id} value={category.id}>
                     {category.name}
@@ -712,7 +765,7 @@ function EditProjectPage() {
                 aria-invalid={Boolean(errors.fields.difficultyId)}
                 className={fieldClassName(errors.fields.difficultyId)}
               >
-                <option value="">Schwierigkeit waehlen</option>
+                <option value="">Schwierigkeit wählen</option>
                 {difficulties.map((difficulty) => (
                   <option key={difficulty.id} value={difficulty.id}>
                     {difficulty.name}
@@ -805,7 +858,7 @@ function EditProjectPage() {
               onClick={addMaterial}
               className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800 transition hover:bg-emerald-100"
             >
-              Material hinzufuegen
+              Material hinzufügen
             </button>
           </div>
           <ErrorText>{errors.materials.section}</ErrorText>
@@ -892,7 +945,7 @@ function EditProjectPage() {
               onClick={addStep}
               className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800 transition hover:bg-emerald-100"
             >
-              Schritt hinzufuegen
+              Schritt hinzufügen
             </button>
           </div>
           <ErrorText>{errors.steps.section}</ErrorText>

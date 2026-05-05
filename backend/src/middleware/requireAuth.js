@@ -1,8 +1,8 @@
+const { sendError } = require('../utils/apiResponses')
+
 function requireAuth(req, res, next) {
   if (!req.session?.userId) {
-    return res.status(401).json({
-      message: 'Bitte melde dich an.',
-    })
+    return sendError(res, 'Bitte melde dich an, um fortzufahren.', 401)
   }
 
   return next()

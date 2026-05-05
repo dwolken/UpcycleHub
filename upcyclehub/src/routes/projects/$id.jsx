@@ -8,9 +8,11 @@ import {
   useNavigate,
 } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
+import { toUserMessage } from '../../api/apiErrors.js'
 import { getProject } from '../../api/projects.js'
 import { useAuth } from '../../auth/AuthContext.jsx'
 import DeleteProjectButton from '../../components/DeleteProjectButton.jsx'
+import StatusMessage from '../../components/StatusMessage.jsx'
 
 export const Route = createFileRoute('/projects/$id')({
   component: ProjectDetailPage,
@@ -41,10 +43,17 @@ function ProjectDetailPage() {
 
     setIsLoading(true)
     setError('')
+    setProject(null)
 
     getProject(id)
       .then((data) => setProject(data))
-      .catch(() => setError('Das Projekt konnte nicht geladen werden.'))
+      .catch((requestError) =>
+        setError(
+          toUserMessage(requestError, 'Das Projekt konnte nicht geladen werden.', {
+            404: 'Projekt wurde nicht gefunden.',
+          }),
+        ),
+      )
       .finally(() => setIsLoading(false))
   }, [id, isEditRoute])
 
@@ -62,17 +71,12 @@ function ProjectDetailPage() {
 
   if (error || !project) {
     return (
-      <div className="space-y-4 rounded-lg border border-stone-200 bg-white p-5">
-        <p className="text-sm text-stone-600">
-          {error || 'Das Projekt wurde nicht gefunden.'}
-        </p>
-        <Link
-          to="/projects"
-          className="text-sm font-medium text-emerald-700 hover:text-emerald-900"
-        >
-          Zurück zur Übersicht
-        </Link>
-      </div>
+      <StatusMessage
+        variant={error ? 'error' : 'neutral'}
+        link={{ to: '/projects', label: 'Zurück zur Übersicht' }}
+      >
+        {error || 'Projekt wurde nicht gefunden.'}
+      </StatusMessage>
     )
   }
 
