@@ -9,7 +9,6 @@ import {
 import { useState } from 'react'
 import { toUserMessage } from '../api/apiErrors.js'
 import { AuthProvider, useAuth } from '../auth/AuthContext.jsx'
-import AppIcon from '../components/AppIcon.jsx'
 import { ErrorState, NotFoundState } from '../components/StatusMessage.jsx'
 
 export const Route = createRootRoute({
@@ -65,8 +64,12 @@ function RootLayoutContent() {
       <header className="border-b border-stone-200 bg-white">
         <div className="mx-auto flex max-w-5xl flex-col gap-4 px-6 py-4 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-emerald-100 bg-emerald-50 text-emerald-700">
-              <AppIcon />
+            <div className="flex h-12 w-12 items-center justify-center">
+              <img
+                src="/logo.png"
+                alt="UpcycleHub Logo"
+                className="h-full w-full object-contain"
+              />
             </div>
             <div>
               <p className="text-lg font-semibold text-stone-950">
