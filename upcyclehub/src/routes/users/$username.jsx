@@ -51,7 +51,7 @@ function AuthorPage() {
   if (error) {
     if (error === 'Benutzer wurde nicht gefunden.') {
       return (
-        <NotFoundState title="Benutzer wurde nicht gefunden.">
+        <NotFoundState title="Benutzer wurde nicht gefunden">
           Für diesen Benutzernamen gibt es keine öffentliche Autorenseite.
         </NotFoundState>
       )
@@ -93,7 +93,7 @@ function AuthorPage() {
           ))}
         </section>
       ) : (
-        <EmptyState title="Noch keine öffentlichen Projekte.">
+        <EmptyState title="Noch keine öffentlichen Projekte">
           Diese Person hat noch keine öffentlichen Upcycling-Projekte erstellt.
         </EmptyState>
       )}

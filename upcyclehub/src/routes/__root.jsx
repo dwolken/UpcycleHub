@@ -19,8 +19,8 @@ export const Route = createRootRoute({
 
 function RootNotFoundPage() {
   return (
-    <NotFoundState title="Seite nicht gefunden.">
-      Diese Seite gibt es auf UpcycleHub nicht oder sie wurde verschoben.
+    <NotFoundState title="Seite nicht gefunden">
+      Die angeforderte Seite existiert nicht oder wurde entfernt.
     </NotFoundState>
   )
 }
@@ -139,7 +139,7 @@ function RootLayoutContent() {
       <main className="mx-auto max-w-5xl px-6 py-10">
         {logoutError ? (
           <div className="mb-6">
-            <ErrorState title="Abmeldung nicht vollständig abgeschlossen.">
+            <ErrorState title="Abmeldung nicht vollständig abgeschlossen">
               {logoutError}
             </ErrorState>
           </div>

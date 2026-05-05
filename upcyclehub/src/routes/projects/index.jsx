@@ -216,15 +216,14 @@ function ProjectsPage() {
 
       {!isLoading && !error && projects.length === 0 ? (
         <EmptyState
-          title="Keine passenden Projekte gefunden."
+          title="Keine passenden Projekte gefunden"
           actions={
             hasActiveFilters
               ? [{ label: 'Filter zurücksetzen', onClick: resetFilters }]
               : []
           }
         >
-          Es wurden keine passenden Projekte gefunden. Passe die Filter an oder
-          entferne sie, um wieder mehr Projekte zu sehen.
+          Passe deine Filter an oder setze sie zurück.
         </EmptyState>
       ) : null}
     </div>

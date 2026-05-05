@@ -72,7 +72,7 @@ function ProjectDetailPage() {
   if (error || !project) {
     if (error === 'Projekt wurde nicht gefunden.' || !project) {
       return (
-        <NotFoundState title="Projekt wurde nicht gefunden.">
+        <NotFoundState title="Projekt wurde nicht gefunden">
           Das gesuchte Projekt ist nicht verfügbar oder wurde gelöscht.
         </NotFoundState>
       )

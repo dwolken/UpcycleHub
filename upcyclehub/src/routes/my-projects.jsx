@@ -93,7 +93,7 @@ function MyProjectsPage() {
       </section>
 
       {isLoadingProjects ? (
-        <LoadingState>Projekte werden geladen.</LoadingState>
+        <LoadingState>Eigene Projekte werden geladen</LoadingState>
       ) : null}
 
       {error ? (
@@ -135,12 +135,12 @@ function MyProjectsPage() {
 
       {!isLoadingProjects && !error && projects.length === 0 ? (
         <EmptyState
-          title="Noch keine eigenen Projekte."
+          title="Noch keine eigenen Projekte"
           actions={[
-            { to: '/projects/new', label: 'Erstes Projekt erstellen', variant: 'primary' },
+            { to: '/projects/new', label: 'Projekt erstellen', variant: 'primary' },
           ]}
         >
-          Erstelle dein erstes Upcycling-Projekt, damit es hier erscheint.
+          Du hast bisher noch keine Projekte angelegt.
         </EmptyState>
       ) : null}
     </div>

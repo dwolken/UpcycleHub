@@ -3,29 +3,28 @@ import { Link } from '@tanstack/react-router'
 const variants = {
   neutral: {
     panel: 'border-stone-200 bg-white',
-    marker: 'border-stone-200 bg-stone-50 text-stone-600',
-    eyebrow: 'Hinweis',
+    accent: 'bg-stone-200',
   },
   empty: {
-    panel: 'border-stone-200 bg-white',
-    marker: 'border-amber-200 bg-amber-50 text-amber-800',
-    eyebrow: 'Leer',
+    panel: 'border-emerald-100 bg-white',
+    accent: 'bg-emerald-600',
   },
   error: {
-    panel: 'border-red-200 bg-white',
-    marker: 'border-red-200 bg-red-50 text-red-700',
-    eyebrow: 'Fehler',
+    panel: 'border-red-100 bg-white',
+    accent: 'bg-red-500',
   },
   success: {
-    panel: 'border-emerald-200 bg-white',
-    marker: 'border-emerald-200 bg-emerald-50 text-emerald-800',
-    eyebrow: 'Erledigt',
+    panel: 'border-emerald-100 bg-white',
+    accent: 'bg-emerald-600',
+  },
+  notFound: {
+    panel: 'border-stone-200 bg-white',
+    accent: 'bg-stone-700',
   },
 }
 
 const actionVariants = {
-  primary:
-    'bg-emerald-700 text-white shadow-sm hover:bg-emerald-800',
+  primary: 'bg-emerald-700 text-white shadow-sm hover:bg-emerald-800',
   secondary:
     'border border-stone-300 bg-white text-stone-700 hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-800',
 }
@@ -42,66 +41,65 @@ function StatusMessage({
 
   return (
     <section
-      className={`rounded-lg border p-5 shadow-sm md:p-6 ${currentVariant.panel}`}
+      className={`overflow-hidden rounded-lg border shadow-sm ${currentVariant.panel}`}
     >
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-        <div
-          className={`w-fit rounded-full border px-3 py-1 text-xs font-semibold ${currentVariant.marker}`}
-        >
-          {currentVariant.eyebrow}
-        </div>
+      <div className={`h-1.5 ${currentVariant.accent}`} />
 
-        <div className="min-w-0 flex-1 space-y-3">
-          {title ? (
-            <h2 className="text-xl font-semibold text-stone-950">{title}</h2>
-          ) : null}
-          <p className="max-w-2xl text-sm leading-6 text-stone-600">
-            {children}
-          </p>
+      <div className="space-y-3 p-5 md:p-6">
+        {title ? (
+          <h2 className="text-xl font-semibold text-stone-950">{title}</h2>
+        ) : null}
+        <p className="max-w-2xl text-sm leading-6 text-stone-600">
+          {children}
+        </p>
 
-          {visibleActions.length > 0 ? (
-            <div className="flex flex-wrap gap-3 pt-1">
-              {visibleActions.map((action) => {
-                const actionClassName = `rounded-md px-4 py-2 text-sm font-medium transition ${
-                  actionVariants[action.variant || 'secondary']
-                }`
+        {visibleActions.length > 0 ? (
+          <div className="flex flex-wrap gap-3 pt-1">
+            {visibleActions.map((action) => {
+              const actionClassName = `rounded-md px-4 py-2 text-sm font-medium transition ${
+                actionVariants[action.variant || 'secondary']
+              }`
 
-                if (action.onClick) {
-                  return (
-                    <button
-                      key={action.label}
-                      type="button"
-                      onClick={action.onClick}
-                      className={actionClassName}
-                    >
-                      {action.label}
-                    </button>
-                  )
-                }
-
+              if (action.onClick) {
                 return (
-                  <Link
-                    key={`${action.to}-${action.label}`}
-                    to={action.to}
-                    params={action.params}
+                  <button
+                    key={action.label}
+                    type="button"
+                    onClick={action.onClick}
                     className={actionClassName}
                   >
                     {action.label}
-                  </Link>
+                  </button>
                 )
-              })}
-            </div>
-          ) : null}
-        </div>
+              }
+
+              return (
+                <Link
+                  key={`${action.to}-${action.label}`}
+                  to={action.to}
+                  params={action.params}
+                  className={actionClassName}
+                >
+                  {action.label}
+                </Link>
+              )
+            })}
+          </div>
+        ) : null}
       </div>
     </section>
   )
 }
 
-export function LoadingState({ children = 'Daten werden geladen.' }) {
+export function LoadingState({ children = 'Daten werden geladen' }) {
   return (
-    <section className="rounded-lg border border-stone-200 bg-white p-5 text-sm text-stone-600 shadow-sm">
-      {children}
+    <section className="rounded-lg border border-stone-200 bg-white p-5 shadow-sm md:p-6">
+      <div className="space-y-3">
+        <p className="text-sm font-medium text-stone-700">{children}</p>
+        <div className="h-2 overflow-hidden rounded-full bg-stone-100">
+          <div className="h-full w-1/3 rounded-full bg-emerald-600/70 motion-safe:animate-pulse" />
+        </div>
+      </div>
     </section>
   )
 }
@@ -121,14 +119,14 @@ export function AuthRequiredState({ children, title = 'Anmeldung erforderlich' }
   )
 }
 
-export function NotFoundState({ children, title = 'Seite nicht gefunden.' }) {
+export function NotFoundState({ children, title = 'Seite nicht gefunden' }) {
   return (
     <StatusMessage
       title={title}
-      variant="error"
+      variant="notFound"
       actions={[
-        { to: '/projects', label: 'Zu den Projekten', variant: 'primary' },
-        { to: '/', label: 'Zur Startseite' },
+        { to: '/', label: 'Zur Startseite', variant: 'primary' },
+        { to: '/projects', label: 'Zu den Projekten' },
       ]}
     >
       {children || 'Der gesuchte Inhalt ist nicht verfügbar.'}
@@ -136,7 +134,7 @@ export function NotFoundState({ children, title = 'Seite nicht gefunden.' }) {
   )
 }
 
-export function EmptyState({ actions = [], children, title = 'Noch nichts da.' }) {
+export function EmptyState({ actions = [], children, title = 'Noch nichts da' }) {
   return (
     <StatusMessage title={title} variant="empty" actions={actions}>
       {children}
@@ -144,7 +142,11 @@ export function EmptyState({ actions = [], children, title = 'Noch nichts da.' }
   )
 }
 
-export function ErrorState({ actions = [], children, title = 'Das hat nicht geklappt.' }) {
+export function ErrorState({
+  actions = [],
+  children,
+  title = 'Das hat nicht geklappt',
+}) {
   return (
     <StatusMessage title={title} variant="error" actions={actions}>
       {children}
@@ -155,7 +157,7 @@ export function ErrorState({ actions = [], children, title = 'Das hat nicht gekl
 export function ForbiddenState({ actions = [], children }) {
   return (
     <StatusMessage
-      title="Diese Aktion ist nicht erlaubt."
+      title="Diese Aktion ist nicht erlaubt"
       variant="error"
       actions={actions}
     >
