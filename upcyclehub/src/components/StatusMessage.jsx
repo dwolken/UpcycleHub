@@ -94,11 +94,12 @@ function StatusMessage({
 export function LoadingState({ children = 'Daten werden geladen' }) {
   return (
     <section className="rounded-lg border border-stone-200 bg-white p-5 shadow-sm md:p-6">
-      <div className="space-y-3">
+      <div className="flex items-center gap-3">
+        <span
+          className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-stone-200 border-t-emerald-700"
+          aria-hidden="true"
+        />
         <p className="text-sm font-medium text-stone-700">{children}</p>
-        <div className="h-2 overflow-hidden rounded-full bg-stone-100">
-          <div className="h-full w-1/3 rounded-full bg-emerald-600/70 motion-safe:animate-pulse" />
-        </div>
       </div>
     </section>
   )
