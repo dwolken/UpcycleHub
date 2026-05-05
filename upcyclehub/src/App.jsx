@@ -40,21 +40,31 @@ function App() {
   return (
     <div className="space-y-12">
       <section className="border-b border-stone-200 pb-10">
-        <div className="max-w-3xl space-y-5">
-          <h1 className="text-4xl font-semibold text-stone-950 md:text-5xl">
-            UpcycleHub
-          </h1>
-          <p className="text-base leading-7 text-stone-600 md:text-lg">
-            UpcycleHub sammelt Ideen für nachhaltige Upcycling-Projekte und
-            verständliche Anleitungen. Die Plattform zeigt, wie aus alten oder
-            ungenutzten Gegenständen wieder nützliche Dinge entstehen können.
-          </p>
-          <Link
-            to="/projects"
-            className="inline-flex rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-800"
-          >
-            Projekte entdecken
-          </Link>
+        <div className="grid gap-8 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+          <div className="max-w-3xl space-y-5">
+            <h1 className="text-4xl font-semibold text-stone-950 md:text-5xl">
+              UpcycleHub
+            </h1>
+            <p className="text-base leading-7 text-stone-600 md:text-lg">
+              UpcycleHub bündelt nachhaltige Upcycling-Ideen und verständliche
+              Anleitungen, damit aus ungenutzten Gegenständen wieder nützliche
+              Dinge entstehen.
+            </p>
+            <Link
+              to="/projects"
+              className="inline-flex rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-800"
+            >
+              Projekte entdecken
+            </Link>
+          </div>
+
+          <div className="flex justify-start md:justify-end">
+            <img
+              src="/logo.png"
+              alt="UpcycleHub Logo"
+              className="h-28 w-28 object-contain md:h-36 md:w-36"
+            />
+          </div>
         </div>
       </section>
 
