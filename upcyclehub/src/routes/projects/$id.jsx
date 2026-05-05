@@ -8,9 +8,15 @@ import {
   useNavigate,
 } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
+import { toUserMessage } from '../../api/apiErrors.js'
 import { getProject } from '../../api/projects.js'
 import { useAuth } from '../../auth/AuthContext.jsx'
 import DeleteProjectButton from '../../components/DeleteProjectButton.jsx'
+import {
+  ErrorState,
+  LoadingState,
+  NotFoundState,
+} from '../../components/StatusMessage.jsx'
 
 export const Route = createFileRoute('/projects/$id')({
   component: ProjectDetailPage,
@@ -41,10 +47,17 @@ function ProjectDetailPage() {
 
     setIsLoading(true)
     setError('')
+    setProject(null)
 
     getProject(id)
       .then((data) => setProject(data))
-      .catch(() => setError('Das Projekt konnte nicht geladen werden.'))
+      .catch((requestError) =>
+        setError(
+          toUserMessage(requestError, 'Das Projekt konnte nicht geladen werden.', {
+            404: 'Projekt wurde nicht gefunden.',
+          }),
+        ),
+      )
       .finally(() => setIsLoading(false))
   }, [id, isEditRoute])
 
@@ -53,26 +66,25 @@ function ProjectDetailPage() {
   }
 
   if (isLoading) {
-    return (
-      <p className="rounded-lg border border-stone-200 bg-white p-5 text-sm text-stone-600">
-        Projekt wird geladen.
-      </p>
-    )
+    return <LoadingState>Projekt wird geladen.</LoadingState>
   }
 
   if (error || !project) {
+    if (error === 'Projekt wurde nicht gefunden.' || !project) {
+      return (
+        <NotFoundState title="Projekt wurde nicht gefunden">
+          Das gesuchte Projekt ist nicht verfügbar oder wurde gelöscht.
+        </NotFoundState>
+      )
+    }
+
     return (
-      <div className="space-y-4 rounded-lg border border-stone-200 bg-white p-5">
-        <p className="text-sm text-stone-600">
-          {error || 'Das Projekt wurde nicht gefunden.'}
-        </p>
-        <Link
-          to="/projects"
-          className="text-sm font-medium text-emerald-700 hover:text-emerald-900"
-        >
-          Zurück zur Übersicht
-        </Link>
-      </div>
+      <ErrorState
+        title="Projekt konnte nicht geladen werden."
+        actions={[{ to: '/projects', label: 'Zurück zur Übersicht' }]}
+      >
+        {error}
+      </ErrorState>
     )
   }
 

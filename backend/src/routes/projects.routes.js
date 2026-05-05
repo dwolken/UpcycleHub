@@ -4,6 +4,7 @@ const express = require('express')
 const multer = require('multer')
 const db = require('../db')
 const requireAuth = require('../middleware/requireAuth')
+const { sendError } = require('../utils/apiResponses')
 
 const router = express.Router()
 const uploadDirectory = path.join(__dirname, '..', '..', 'public', 'images', 'projects')
@@ -33,7 +34,7 @@ const upload = multer({
   }),
   fileFilter(req, file, cb) {
     if (!allowedImageTypes.has(file.mimetype)) {
-      const error = new Error('Bitte waehle eine gueltige Bilddatei aus.')
+      const error = new Error('Bitte wähle eine gültige Bilddatei aus.')
       error.status = 400
       cb(error)
       return
@@ -179,7 +180,7 @@ function addMultiValueFilter(conditions, params, field, paramName, values) {
 }
 
 function sendValidationError(res, message) {
-  return res.status(400).json({ message })
+  return sendError(res, message, 400)
 }
 
 function deleteUploadedFile(file) {
@@ -236,14 +237,18 @@ function uploadProjectImage(req, res, next) {
     }
 
     if (error instanceof multer.MulterError && error.code === 'LIMIT_FILE_SIZE') {
-      return res.status(400).json({
-        message: 'Das Bild darf maximal 5 MB gross sein.',
-      })
+      return sendError(res, 'Das Bild darf maximal 5 MB groß sein.', 400)
     }
 
-    return res.status(error.status || 400).json({
-      message: error.message || 'Das Bild konnte nicht hochgeladen werden.',
-    })
+    if (error instanceof multer.MulterError) {
+      return sendError(res, 'Das Bild konnte nicht hochgeladen werden.', 400)
+    }
+
+    return sendError(
+      res,
+      error.message || 'Das Bild konnte nicht hochgeladen werden.',
+      error.status || 400,
+    )
   })
 }
 
@@ -296,11 +301,11 @@ function validateProjectPayload(body) {
   }
 
   if (!Number.isInteger(categoryId) || categoryId < 1) {
-    return { error: 'Bitte waehle eine Kategorie aus.' }
+    return { error: 'Bitte wähle eine Kategorie aus.' }
   }
 
   if (!Number.isInteger(difficultyId) || difficultyId < 1) {
-    return { error: 'Bitte waehle eine Schwierigkeit aus.' }
+    return { error: 'Bitte wähle eine Schwierigkeit aus.' }
   }
 
   if (!summary) {
@@ -312,11 +317,11 @@ function validateProjectPayload(body) {
   }
 
   if (!Number.isInteger(estimatedMinutes) || estimatedMinutes < 1) {
-    return { error: 'Bitte gib eine gueltige Dauer in Minuten ein.' }
+    return { error: 'Bitte gib eine gültige Dauer in Minuten ein.' }
   }
 
   if (!imageUrl) {
-    return { error: 'Bitte waehle ein Bild aus.' }
+    return { error: 'Bitte wähle ein Bild aus.' }
   }
 
   if (!materials || !steps) {
@@ -479,14 +484,14 @@ router.post('/', requireAuth, uploadProjectImage, (req, res, next) => {
 
   if (!categoryExists) {
     deleteUploadedFile(req.file)
-    return sendValidationError(res, 'Die ausgewaehlte Kategorie ist ungueltig.')
+    return sendValidationError(res, 'Die ausgewählte Kategorie ist ungültig.')
   }
 
   if (!difficultyExists) {
     deleteUploadedFile(req.file)
     return sendValidationError(
       res,
-      'Die ausgewaehlte Schwierigkeit ist ungueltig.',
+      'Die ausgewählte Schwierigkeit ist ungültig.',
     )
   }
 
@@ -623,16 +628,12 @@ router.put('/:id', requireAuth, uploadProjectImage, (req, res, next) => {
 
   if (!existingProject) {
     deleteUploadedFile(req.file)
-    return res.status(404).json({
-      message: 'Projekt wurde nicht gefunden.',
-    })
+    return sendError(res, 'Projekt wurde nicht gefunden.', 404)
   }
 
   if (existingProject.p_u_id !== req.session.userId) {
     deleteUploadedFile(req.file)
-    return res.status(403).json({
-      message: 'Du darfst dieses Projekt nicht bearbeiten.',
-    })
+    return sendError(res, 'Diese Aktion ist nicht erlaubt.', 403)
   }
 
   const imageUrl = req.file
@@ -658,14 +659,14 @@ router.put('/:id', requireAuth, uploadProjectImage, (req, res, next) => {
 
   if (!categoryExists) {
     deleteUploadedFile(req.file)
-    return sendValidationError(res, 'Die ausgewaehlte Kategorie ist ungueltig.')
+    return sendValidationError(res, 'Die ausgewählte Kategorie ist ungültig.')
   }
 
   if (!difficultyExists) {
     deleteUploadedFile(req.file)
     return sendValidationError(
       res,
-      'Die ausgewaehlte Schwierigkeit ist ungueltig.',
+      'Die ausgewählte Schwierigkeit ist ungültig.',
     )
   }
 
@@ -767,15 +768,11 @@ router.delete('/:id', requireAuth, (req, res, next) => {
     .get(req.params.id)
 
   if (!existingProject) {
-    return res.status(404).json({
-      message: 'Projekt wurde nicht gefunden.',
-    })
+    return sendError(res, 'Projekt wurde nicht gefunden.', 404)
   }
 
   if (existingProject.p_u_id !== req.session.userId) {
-    return res.status(403).json({
-      message: 'Loeschen nicht erlaubt.',
-    })
+    return sendError(res, 'Diese Aktion ist nicht erlaubt.', 403)
   }
 
   try {
@@ -789,7 +786,7 @@ router.delete('/:id', requireAuth, (req, res, next) => {
     deleteProjectImage(existingProject.p_image_url)
 
     return res.json({
-      message: 'Projekt wurde geloescht.',
+      message: 'Projekt wurde gelöscht.',
       data: {
         id: existingProject.p_id,
       },

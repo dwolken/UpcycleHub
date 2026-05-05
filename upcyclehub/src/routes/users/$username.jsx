@@ -2,8 +2,15 @@
 
 import { Link, createFileRoute } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
+import { toUserMessage } from '../../api/apiErrors.js'
 import { getUserProjects } from '../../api/projects.js'
 import ProjectCard from '../../components/ProjectCard.jsx'
+import {
+  EmptyState,
+  ErrorState,
+  LoadingState,
+  NotFoundState,
+} from '../../components/StatusMessage.jsx'
 
 export const Route = createFileRoute('/users/$username')({
   component: AuthorPage,
@@ -29,33 +36,34 @@ function AuthorPage() {
         setAuthor(null)
         setProjects([])
         setError(
-          requestError.status === 404
-            ? 'Diese Autorenseite wurde nicht gefunden.'
-            : 'Die Projekte konnten nicht geladen werden.',
+          toUserMessage(requestError, 'Die Projekte konnten nicht geladen werden.', {
+            404: 'Benutzer wurde nicht gefunden.',
+          }),
         )
       })
       .finally(() => setIsLoading(false))
   }, [username])
 
   if (isLoading) {
-    return (
-      <p className="rounded-lg border border-stone-200 bg-white p-5 text-sm text-stone-600">
-        Projekte werden geladen.
-      </p>
-    )
+    return <LoadingState>Projekte werden geladen.</LoadingState>
   }
 
   if (error) {
+    if (error === 'Benutzer wurde nicht gefunden.') {
+      return (
+        <NotFoundState title="Benutzer wurde nicht gefunden">
+          Für diesen Benutzernamen gibt es keine öffentliche Autorenseite.
+        </NotFoundState>
+      )
+    }
+
     return (
-      <section className="space-y-4 rounded-lg border border-stone-200 bg-white p-5 shadow-sm">
-        <p className="text-sm text-stone-600">{error}</p>
-        <Link
-          to="/projects"
-          className="text-sm font-medium text-emerald-700 hover:text-emerald-900"
-        >
-          Zurück zur Übersicht
-        </Link>
-      </section>
+      <ErrorState
+        title="Autorenseite konnte nicht geladen werden."
+        actions={[{ to: '/projects', label: 'Zurück zur Übersicht' }]}
+      >
+        {error}
+      </ErrorState>
     )
   }
 
@@ -85,9 +93,9 @@ function AuthorPage() {
           ))}
         </section>
       ) : (
-        <p className="rounded-lg border border-stone-200 bg-white p-5 text-sm text-stone-600">
-          Diese Person hat noch keine öffentlichen Projekte erstellt.
-        </p>
+        <EmptyState title="Noch keine öffentlichen Projekte">
+          Diese Person hat noch keine öffentlichen Upcycling-Projekte erstellt.
+        </EmptyState>
       )}
     </div>
   )

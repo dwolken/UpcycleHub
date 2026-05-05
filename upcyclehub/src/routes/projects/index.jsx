@@ -2,8 +2,14 @@
 
 import { createFileRoute } from '@tanstack/react-router'
 import { useEffect, useMemo, useState } from 'react'
+import { toUserMessage } from '../../api/apiErrors.js'
 import { getProjects } from '../../api/projects.js'
 import ProjectCard from '../../components/ProjectCard.jsx'
+import {
+  EmptyState,
+  ErrorState,
+  LoadingState,
+} from '../../components/StatusMessage.jsx'
 
 export const Route = createFileRoute('/projects/')({
   component: ProjectsPage,
@@ -40,7 +46,11 @@ function ProjectsPage() {
 
     getProjects(filters)
       .then((data) => setProjects(data))
-      .catch(() => setError('Die Projekte konnten nicht geladen werden.'))
+      .catch((requestError) =>
+        setError(
+          toUserMessage(requestError, 'Die Projekte konnten nicht geladen werden.'),
+        ),
+      )
       .finally(() => setIsLoading(false))
   }, [filters])
 
@@ -184,15 +194,16 @@ function ProjectsPage() {
       </section>
 
       {isLoading ? (
-        <p className="rounded-lg border border-stone-200 bg-white p-5 text-sm text-stone-600">
-          Projekte werden geladen.
-        </p>
+        <LoadingState>Projekte werden geladen.</LoadingState>
       ) : null}
 
       {error ? (
-        <p className="rounded-lg border border-stone-200 bg-white p-5 text-sm text-stone-600">
+        <ErrorState
+          title="Projekte konnten nicht geladen werden."
+          actions={[{ to: '/', label: 'Zur Startseite' }]}
+        >
           {error}
-        </p>
+        </ErrorState>
       ) : null}
 
       {!isLoading && !error ? (
@@ -204,9 +215,16 @@ function ProjectsPage() {
       ) : null}
 
       {!isLoading && !error && projects.length === 0 ? (
-        <p className="rounded-lg border border-stone-200 bg-white p-5 text-sm text-stone-600">
-          Zu diesen Filtern wurden keine Projekte gefunden.
-        </p>
+        <EmptyState
+          title="Keine passenden Projekte gefunden"
+          actions={
+            hasActiveFilters
+              ? [{ label: 'Filter zurücksetzen', onClick: resetFilters }]
+              : []
+          }
+        >
+          Passe deine Filter an oder setze sie zurück.
+        </EmptyState>
       ) : null}
     </div>
   )

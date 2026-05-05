@@ -1,16 +1,9 @@
 const express = require('express')
 const bcrypt = require('bcryptjs')
 const db = require('../db')
+const { sendData, sendError } = require('../utils/apiResponses')
 
 const router = express.Router()
-
-function sendData(res, data, status = 200) {
-  return res.status(status).json({ data })
-}
-
-function sendError(res, message, status) {
-  return res.status(status).json({ message })
-}
 
 function mapUser(row) {
   return {

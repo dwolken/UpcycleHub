@@ -2,11 +2,35 @@
 
 import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
+import { toUserMessage } from '../api/apiErrors.js'
 import { useAuth } from '../auth/AuthContext.jsx'
 
 export const Route = createFileRoute('/register')({
   component: RegisterPage,
 })
+
+const emptyFieldErrors = {
+  username: '',
+  password: '',
+  passwordConfirmation: '',
+}
+
+const inputClassName =
+  'w-full rounded-md border bg-white px-3 py-2 text-sm font-normal text-stone-900 outline-none transition'
+
+function fieldClassName(error) {
+  return error
+    ? `${inputClassName} border-red-300 focus:border-red-600`
+    : `${inputClassName} border-stone-300 focus:border-emerald-600`
+}
+
+function FieldError({ children }) {
+  if (!children) {
+    return null
+  }
+
+  return <p className="text-sm font-normal text-red-700">{children}</p>
+}
 
 function RegisterPage() {
   const navigate = useNavigate()
@@ -16,6 +40,7 @@ function RegisterPage() {
     password: '',
     passwordConfirmation: '',
   })
+  const [fieldErrors, setFieldErrors] = useState(emptyFieldErrors)
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -24,49 +49,50 @@ function RegisterPage() {
       ...currentFormData,
       [name]: value,
     }))
+    setFieldErrors((currentErrors) => ({
+      ...currentErrors,
+      [name]: '',
+    }))
+    setError('')
   }
 
   function validateForm() {
     const username = formData.username.trim()
+    const errors = { ...emptyFieldErrors }
 
     if (!username) {
-      return 'Bitte gib einen Benutzernamen ein.'
-    }
-
-    if (username.length < 3) {
-      return 'Der Benutzername muss mindestens 3 Zeichen lang sein.'
-    }
-
-    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
-      return 'Der Benutzername darf nur Buchstaben, Zahlen und Unterstriche enthalten.'
+      errors.username = 'Bitte gib einen Benutzernamen ein.'
+    } else if (username.length < 3) {
+      errors.username = 'Der Benutzername muss mindestens 3 Zeichen lang sein.'
+    } else if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+      errors.username =
+        'Der Benutzername darf nur Buchstaben, Zahlen und Unterstriche enthalten.'
     }
 
     if (!formData.password) {
-      return 'Bitte gib ein Passwort ein.'
-    }
-
-    if (formData.password.length < 6) {
-      return 'Das Passwort ist zu kurz.'
+      errors.password = 'Bitte gib ein Passwort ein.'
+    } else if (formData.password.length < 6) {
+      errors.password = 'Das Passwort ist zu kurz.'
     }
 
     if (!formData.passwordConfirmation) {
-      return 'Bitte bestätige dein Passwort.'
+      errors.passwordConfirmation = 'Bitte bestätige dein Passwort.'
+    } else if (formData.password !== formData.passwordConfirmation) {
+      errors.passwordConfirmation =
+        'Passwort und Bestätigung stimmen nicht überein.'
     }
 
-    if (formData.password !== formData.passwordConfirmation) {
-      return 'Passwort und Bestätigung stimmen nicht überein.'
-    }
-
-    return ''
+    return errors
   }
 
   async function handleSubmit(event) {
     event.preventDefault()
     setError('')
+    setFieldErrors(emptyFieldErrors)
 
-    const validationError = validateForm()
-    if (validationError) {
-      setError(validationError)
+    const validationErrors = validateForm()
+    if (Object.values(validationErrors).some(Boolean)) {
+      setFieldErrors(validationErrors)
       return
     }
 
@@ -79,7 +105,18 @@ function RegisterPage() {
       })
       await navigate({ to: '/my-projects' })
     } catch (registerError) {
-      setError(registerError.message)
+      const message = toUserMessage(
+        registerError,
+        'Die Registrierung konnte nicht abgeschlossen werden.',
+      )
+      if (message === 'Benutzername ist bereits vergeben.') {
+        setFieldErrors({
+          ...emptyFieldErrors,
+          username: message,
+        })
+      } else {
+        setError(message)
+      }
     } finally {
       setIsSubmitting(false)
     }
@@ -105,8 +142,10 @@ function RegisterPage() {
             value={formData.username}
             onChange={(event) => updateField('username', event.target.value)}
             autoComplete="username"
-            className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm font-normal text-stone-900 outline-none transition focus:border-emerald-600"
+            aria-invalid={Boolean(fieldErrors.username)}
+            className={fieldClassName(fieldErrors.username)}
           />
+          <FieldError>{fieldErrors.username}</FieldError>
         </label>
 
         <label className="block space-y-2 text-sm font-medium text-stone-700">
@@ -116,8 +155,10 @@ function RegisterPage() {
             value={formData.password}
             onChange={(event) => updateField('password', event.target.value)}
             autoComplete="new-password"
-            className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm font-normal text-stone-900 outline-none transition focus:border-emerald-600"
+            aria-invalid={Boolean(fieldErrors.password)}
+            className={fieldClassName(fieldErrors.password)}
           />
+          <FieldError>{fieldErrors.password}</FieldError>
         </label>
 
         <label className="block space-y-2 text-sm font-medium text-stone-700">
@@ -129,8 +170,10 @@ function RegisterPage() {
               updateField('passwordConfirmation', event.target.value)
             }
             autoComplete="new-password"
-            className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm font-normal text-stone-900 outline-none transition focus:border-emerald-600"
+            aria-invalid={Boolean(fieldErrors.passwordConfirmation)}
+            className={fieldClassName(fieldErrors.passwordConfirmation)}
           />
+          <FieldError>{fieldErrors.passwordConfirmation}</FieldError>
         </label>
 
         {error ? (

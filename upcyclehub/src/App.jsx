@@ -2,6 +2,11 @@ import { Link } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { getProjects } from './api/projects.js'
 import ProjectCard from './components/ProjectCard.jsx'
+import {
+  EmptyState,
+  ErrorState,
+  LoadingState,
+} from './components/StatusMessage.jsx'
 
 function getRandomProjects(projects, count = 3) {
   const shuffledProjects = [...projects]
@@ -20,11 +25,15 @@ function getRandomProjects(projects, count = 3) {
 function App() {
   const [recommendedProjects, setRecommendedProjects] = useState([])
   const [isLoadingRecommendations, setIsLoadingRecommendations] = useState(true)
+  const [recommendationError, setRecommendationError] = useState('')
 
   useEffect(() => {
     getProjects()
       .then((projects) => setRecommendedProjects(getRandomProjects(projects)))
-      .catch(() => setRecommendedProjects([]))
+      .catch(() => {
+        setRecommendedProjects([])
+        setRecommendationError('Empfohlene Projekte konnten nicht geladen werden.')
+      })
       .finally(() => setIsLoadingRecommendations(false))
   }, [])
 
@@ -101,12 +110,10 @@ function App() {
         </div>
 
         {isLoadingRecommendations ? (
-          <p className="rounded-lg border border-stone-200 bg-white p-5 text-sm text-stone-600">
-            Projekte werden geladen.
-          </p>
+          <LoadingState>Projekte werden geladen.</LoadingState>
         ) : null}
 
-        {!isLoadingRecommendations && recommendedProjects.length > 0 ? (
+        {!isLoadingRecommendations && !recommendationError && recommendedProjects.length > 0 ? (
           <div className="grid gap-4 md:grid-cols-3">
             {recommendedProjects.map((project) => (
               <ProjectCard key={project.id} project={project} />
@@ -114,10 +121,24 @@ function App() {
           </div>
         ) : null}
 
-        {!isLoadingRecommendations && recommendedProjects.length === 0 ? (
-          <p className="rounded-lg border border-stone-200 bg-white p-5 text-sm text-stone-600">
-            Empfohlene Projekte konnten nicht geladen werden.
-          </p>
+        {!isLoadingRecommendations && recommendationError ? (
+          <ErrorState
+            title="Empfehlungen konnten nicht geladen werden."
+            actions={[{ to: '/projects', label: 'Alle Projekte ansehen' }]}
+          >
+            {recommendationError}
+          </ErrorState>
+        ) : null}
+
+        {!isLoadingRecommendations &&
+        !recommendationError &&
+        recommendedProjects.length === 0 ? (
+          <EmptyState
+            title="Noch keine Empfehlungen verfügbar."
+            actions={[{ to: '/projects', label: 'Alle Projekte ansehen' }]}
+          >
+            Es sind noch keine empfohlenen Projekte verfügbar.
+          </EmptyState>
         ) : null}
       </section>
     </div>

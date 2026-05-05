@@ -2,11 +2,34 @@
 
 import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
+import { toUserMessage } from '../api/apiErrors.js'
 import { useAuth } from '../auth/AuthContext.jsx'
 
 export const Route = createFileRoute('/login')({
   component: LoginPage,
 })
+
+const emptyFieldErrors = {
+  username: '',
+  password: '',
+}
+
+const inputClassName =
+  'w-full rounded-md border bg-white px-3 py-2 text-sm font-normal text-stone-900 outline-none transition'
+
+function fieldClassName(error) {
+  return error
+    ? `${inputClassName} border-red-300 focus:border-red-600`
+    : `${inputClassName} border-stone-300 focus:border-emerald-600`
+}
+
+function FieldError({ children }) {
+  if (!children) {
+    return null
+  }
+
+  return <p className="text-sm font-normal text-red-700">{children}</p>
+}
 
 function LoginPage() {
   const navigate = useNavigate()
@@ -15,6 +38,7 @@ function LoginPage() {
     username: '',
     password: '',
   })
+  const [fieldErrors, setFieldErrors] = useState(emptyFieldErrors)
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -23,19 +47,29 @@ function LoginPage() {
       ...currentFormData,
       [name]: value,
     }))
+    setFieldErrors((currentErrors) => ({
+      ...currentErrors,
+      [name]: '',
+    }))
+    setError('')
   }
 
   async function handleSubmit(event) {
     event.preventDefault()
     setError('')
+    setFieldErrors(emptyFieldErrors)
 
+    const nextFieldErrors = { ...emptyFieldErrors }
     if (!formData.username.trim()) {
-      setError('Bitte gib einen Benutzernamen ein.')
-      return
+      nextFieldErrors.username = 'Bitte gib einen Benutzernamen ein.'
     }
 
     if (!formData.password) {
-      setError('Bitte gib ein Passwort ein.')
+      nextFieldErrors.password = 'Bitte gib ein Passwort ein.'
+    }
+
+    if (nextFieldErrors.username || nextFieldErrors.password) {
+      setFieldErrors(nextFieldErrors)
       return
     }
 
@@ -45,7 +79,12 @@ function LoginPage() {
       await login(formData)
       await navigate({ to: '/my-projects' })
     } catch (loginError) {
-      setError(loginError.message)
+      setError(
+        toUserMessage(
+          loginError,
+          'Die Anmeldung konnte nicht abgeschlossen werden.',
+        ),
+      )
     } finally {
       setIsSubmitting(false)
     }
@@ -71,8 +110,10 @@ function LoginPage() {
             value={formData.username}
             onChange={(event) => updateField('username', event.target.value)}
             autoComplete="username"
-            className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm font-normal text-stone-900 outline-none transition focus:border-emerald-600"
+            aria-invalid={Boolean(fieldErrors.username)}
+            className={fieldClassName(fieldErrors.username)}
           />
+          <FieldError>{fieldErrors.username}</FieldError>
         </label>
 
         <label className="block space-y-2 text-sm font-medium text-stone-700">
@@ -82,8 +123,10 @@ function LoginPage() {
             value={formData.password}
             onChange={(event) => updateField('password', event.target.value)}
             autoComplete="current-password"
-            className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm font-normal text-stone-900 outline-none transition focus:border-emerald-600"
+            aria-invalid={Boolean(fieldErrors.password)}
+            className={fieldClassName(fieldErrors.password)}
           />
+          <FieldError>{fieldErrors.password}</FieldError>
         </label>
 
         {error ? (
