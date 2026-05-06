@@ -129,7 +129,7 @@ function ProjectsPage() {
               type="search"
               value={filters.q}
               onChange={(event) => updateSearch(event.target.value)}
-              placeholder="Titel oder Beschreibung"
+              placeholder="Projekte, Materialien oder Ersteller suchen"
               className="h-10 w-full rounded-md border border-stone-300 bg-white px-3 text-sm font-normal text-stone-900 outline-none transition focus:border-emerald-600"
             />
           </label>

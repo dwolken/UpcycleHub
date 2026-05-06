@@ -165,6 +165,17 @@ function cleanQueryValues(value) {
     })
 }
 
+function createSearchPattern(value) {
+  const normalizedValue = db.normalizeSearchText(value)
+
+  if (!normalizedValue) {
+    return ''
+  }
+
+  const escapedValue = normalizedValue.replace(/[\\%_]/g, '\\$&')
+  return `%${escapedValue}%`
+}
+
 function addMultiValueFilter(conditions, params, field, paramName, values) {
   if (values.length === 0) {
     return
@@ -385,7 +396,7 @@ router.get('/', (req, res) => {
   const categories = cleanQueryValues(category)
   const difficulties = cleanQueryValues(difficulty)
   const materials = cleanQueryValues(material)
-  const searchTerm = cleanText(q)
+  const searchPattern = createSearchPattern(q)
 
   addMultiValueFilter(conditions, params, 'c.c_name', 'category', categories)
   addMultiValueFilter(conditions, params, 'd.d_name', 'difficulty', difficulties)
@@ -408,22 +419,36 @@ router.get('/', (req, res) => {
     `)
   }
 
-  if (searchTerm) {
+  if (searchPattern) {
     conditions.push(`
       (
-        LOWER(p.p_title) LIKE LOWER(@search)
-        OR LOWER(p.p_summary) LIKE LOWER(@search)
-        OR LOWER(p.p_description) LIKE LOWER(@search)
+        search_normalize(p.p_title) LIKE @search ESCAPE '\\'
+        OR search_normalize(p.p_summary) LIKE @search ESCAPE '\\'
+        OR search_normalize(p.p_description) LIKE @search ESCAPE '\\'
+        OR search_normalize(c.c_name) LIKE @search ESCAPE '\\'
+        OR search_normalize(d.d_name) LIKE @search ESCAPE '\\'
+        OR search_normalize(u.u_username) LIKE @search ESCAPE '\\'
         OR EXISTS (
           SELECT 1
           FROM project_materials pm_search
           JOIN materials m_search ON m_search.m_id = pm_search.pm_m_id
           WHERE pm_search.pm_p_id = p.p_id
-            AND LOWER(m_search.m_name) LIKE LOWER(@search)
+            AND (
+              search_normalize(m_search.m_name) LIKE @search ESCAPE '\\'
+              OR search_normalize(pm_search.pm_amount) LIKE @search ESCAPE '\\'
+              OR search_normalize(pm_search.pm_unit) LIKE @search ESCAPE '\\'
+              OR search_normalize(pm_search.pm_note) LIKE @search ESCAPE '\\'
+            )
+        )
+        OR EXISTS (
+          SELECT 1
+          FROM project_steps ps_search
+          WHERE ps_search.ps_p_id = p.p_id
+            AND search_normalize(ps_search.ps_text) LIKE @search ESCAPE '\\'
         )
       )
     `)
-    params.search = `%${searchTerm}%`
+    params.search = searchPattern
   }
 
   const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''
