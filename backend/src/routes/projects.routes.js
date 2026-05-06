@@ -184,52 +184,74 @@ function getSearchDistanceLimit(query) {
     return 0
   }
 
-  if (query.length <= 6) {
+  if (query.length <= 5) {
     return 1
   }
 
-  return 2
+  if (query.length <= 8) {
+    return 2
+  }
+
+  return 3
 }
 
-function getLevenshteinDistance(leftValue, rightValue, maxDistance) {
+function getDamerauLevenshteinDistance(leftValue, rightValue, maxDistance) {
   if (leftValue === rightValue) {
     return 0
   }
 
-  if (Math.abs(leftValue.length - rightValue.length) > maxDistance) {
+  if (Math.abs(leftValue.length - rightValue.length) > maxDistance + 1) {
     return maxDistance + 1
   }
 
-  let previousRow = Array.from(
-    { length: rightValue.length + 1 },
-    (_, index) => index,
+  const distances = Array.from({ length: leftValue.length + 1 }, () =>
+    Array(rightValue.length + 1).fill(0),
   )
 
-  for (let leftIndex = 0; leftIndex < leftValue.length; leftIndex += 1) {
-    const currentRow = [leftIndex + 1]
-    let rowMinimum = currentRow[0]
+  for (let leftIndex = 0; leftIndex <= leftValue.length; leftIndex += 1) {
+    distances[leftIndex][0] = leftIndex
+  }
 
-    for (let rightIndex = 0; rightIndex < rightValue.length; rightIndex += 1) {
+  for (let rightIndex = 0; rightIndex <= rightValue.length; rightIndex += 1) {
+    distances[0][rightIndex] = rightIndex
+  }
+
+  for (let leftIndex = 1; leftIndex <= leftValue.length; leftIndex += 1) {
+    let rowMinimum = distances[leftIndex][0]
+
+    for (let rightIndex = 1; rightIndex <= rightValue.length; rightIndex += 1) {
       const substitutionCost =
-        leftValue[leftIndex] === rightValue[rightIndex] ? 0 : 1
+        leftValue[leftIndex - 1] === rightValue[rightIndex - 1] ? 0 : 1
+
       const distance = Math.min(
-        previousRow[rightIndex + 1] + 1,
-        currentRow[rightIndex] + 1,
-        previousRow[rightIndex] + substitutionCost,
+        distances[leftIndex - 1][rightIndex] + 1,
+        distances[leftIndex][rightIndex - 1] + 1,
+        distances[leftIndex - 1][rightIndex - 1] + substitutionCost,
       )
 
-      currentRow.push(distance)
-      rowMinimum = Math.min(rowMinimum, distance)
+      distances[leftIndex][rightIndex] = distance
+
+      if (
+        leftIndex > 1 &&
+        rightIndex > 1 &&
+        leftValue[leftIndex - 1] === rightValue[rightIndex - 2] &&
+        leftValue[leftIndex - 2] === rightValue[rightIndex - 1]
+      ) {
+        distances[leftIndex][rightIndex] = Math.min(
+          distances[leftIndex][rightIndex],
+          distances[leftIndex - 2][rightIndex - 2] + 1,
+        )
+      }
+
+      rowMinimum = Math.min(rowMinimum, distances[leftIndex][rightIndex])
     }
 
     if (rowMinimum > maxDistance) {
       return maxDistance + 1
     }
-
-    previousRow = currentRow
   }
 
-  return previousRow[rightValue.length]
+  return distances[leftValue.length][rightValue.length]
 }
 
 function getSearchableProjectValues(row) {
@@ -253,11 +275,19 @@ function getSearchableProjectValues(row) {
   ]
 }
 
-function projectMatchesSearch(row, query) {
+function isFuzzySearchCandidate(query, word, allowedDistance) {
+  return (
+    word[0] === query[0] &&
+    word.length >= query.length &&
+    Math.abs(word.length - query.length) <= allowedDistance + 1
+  )
+}
+
+function getProjectSearchScore(row, query) {
   const normalizedQuery = db.normalizeSearchText(query)
 
   if (!normalizedQuery) {
-    return true
+    return 0
   }
 
   const searchableText = db.normalizeSearchText(
@@ -265,23 +295,35 @@ function projectMatchesSearch(row, query) {
   )
 
   if (searchableText.includes(normalizedQuery)) {
-    return true
+    return 0
   }
 
-  const distanceLimit = getSearchDistanceLimit(normalizedQuery)
+  const queryWords = normalizedQuery.split(' ').filter(Boolean)
+  const fuzzyQuery = queryWords.length === 1 ? queryWords[0] : ''
+  const distanceLimit = getSearchDistanceLimit(fuzzyQuery)
 
   if (distanceLimit === 0) {
-    return false
+    return null
   }
 
   const searchableWords = [...new Set(searchableText.split(' ').filter(Boolean))]
+  let bestDistance = distanceLimit + 1
 
-  return searchableWords.some(
-    (word) =>
-      word.length >= normalizedQuery.length &&
-      getLevenshteinDistance(normalizedQuery, word, distanceLimit) <=
+  searchableWords.forEach((word) => {
+    if (!isFuzzySearchCandidate(fuzzyQuery, word, distanceLimit)) {
+      return
+    }
+
+    const distance = getDamerauLevenshteinDistance(
+      fuzzyQuery,
+      word,
       distanceLimit,
-  )
+    )
+
+    bestDistance = Math.min(bestDistance, distance)
+  })
+
+  return bestDistance <= distanceLimit ? 10 + bestDistance : null
 }
 
 function sendValidationError(res, message) {
@@ -543,8 +585,27 @@ router.get('/', (req, res) => {
       `,
     )
     .all(params)
+  const scoredRows = searchTerm
+    ? rows
+        .map((row, index) => ({
+          index,
+          row,
+          score: getProjectSearchScore(row, searchTerm),
+        }))
+        .filter((result) => result.score !== null)
+    : []
+  const hasExactSearchMatches = scoredRows.some((result) => result.score === 0)
   const matchingRows = searchTerm
-    ? rows.filter((row) => projectMatchesSearch(row, searchTerm))
+    ? scoredRows
+        .filter((result) => !hasExactSearchMatches || result.score === 0)
+        .sort((leftResult, rightResult) => {
+          if (leftResult.score !== rightResult.score) {
+            return leftResult.score - rightResult.score
+          }
+
+          return leftResult.index - rightResult.index
+        })
+        .map((result) => result.row)
     : rows
 
   res.json({
