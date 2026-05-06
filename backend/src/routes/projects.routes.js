@@ -165,17 +165,6 @@ function cleanQueryValues(value) {
     })
 }
 
-function createSearchPattern(value) {
-  const normalizedValue = db.normalizeSearchText(value)
-
-  if (!normalizedValue) {
-    return ''
-  }
-
-  const escapedValue = normalizedValue.replace(/[\\%_]/g, '\\$&')
-  return `%${escapedValue}%`
-}
-
 function addMultiValueFilter(conditions, params, field, paramName, values) {
   if (values.length === 0) {
     return
@@ -188,6 +177,111 @@ function addMultiValueFilter(conditions, params, field, paramName, values) {
   })
 
   conditions.push(`LOWER(${field}) IN (${placeholders.join(', ')})`)
+}
+
+function getSearchDistanceLimit(query) {
+  if (query.length < 4) {
+    return 0
+  }
+
+  if (query.length <= 6) {
+    return 1
+  }
+
+  return 2
+}
+
+function getLevenshteinDistance(leftValue, rightValue, maxDistance) {
+  if (leftValue === rightValue) {
+    return 0
+  }
+
+  if (Math.abs(leftValue.length - rightValue.length) > maxDistance) {
+    return maxDistance + 1
+  }
+
+  let previousRow = Array.from(
+    { length: rightValue.length + 1 },
+    (_, index) => index,
+  )
+
+  for (let leftIndex = 0; leftIndex < leftValue.length; leftIndex += 1) {
+    const currentRow = [leftIndex + 1]
+    let rowMinimum = currentRow[0]
+
+    for (let rightIndex = 0; rightIndex < rightValue.length; rightIndex += 1) {
+      const substitutionCost =
+        leftValue[leftIndex] === rightValue[rightIndex] ? 0 : 1
+      const distance = Math.min(
+        previousRow[rightIndex + 1] + 1,
+        currentRow[rightIndex] + 1,
+        previousRow[rightIndex] + substitutionCost,
+      )
+
+      currentRow.push(distance)
+      rowMinimum = Math.min(rowMinimum, distance)
+    }
+
+    if (rowMinimum > maxDistance) {
+      return maxDistance + 1
+    }
+
+    previousRow = currentRow
+  }
+
+  return previousRow[rightValue.length]
+}
+
+function getSearchableProjectValues(row) {
+  const materials = getMaterials(row.id)
+  const steps = getSteps(row.id)
+
+  return [
+    row.title,
+    row.summary,
+    row.description,
+    row.categoryName,
+    row.difficultyName,
+    row.ownerUsername,
+    ...materials.flatMap((material) => [
+      material.name,
+      material.amount,
+      material.unit,
+      material.note,
+    ]),
+    ...steps.map((step) => step.text),
+  ]
+}
+
+function projectMatchesSearch(row, query) {
+  const normalizedQuery = db.normalizeSearchText(query)
+
+  if (!normalizedQuery) {
+    return true
+  }
+
+  const searchableText = db.normalizeSearchText(
+    getSearchableProjectValues(row).join(' '),
+  )
+
+  if (searchableText.includes(normalizedQuery)) {
+    return true
+  }
+
+  const distanceLimit = getSearchDistanceLimit(normalizedQuery)
+
+  if (distanceLimit === 0) {
+    return false
+  }
+
+  const searchableWords = [...new Set(searchableText.split(' ').filter(Boolean))]
+
+  return searchableWords.some(
+    (word) =>
+      word.length >= normalizedQuery.length &&
+      getLevenshteinDistance(normalizedQuery, word, distanceLimit) <=
+      distanceLimit,
+  )
 }
 
 function sendValidationError(res, message) {
@@ -396,7 +490,7 @@ router.get('/', (req, res) => {
   const categories = cleanQueryValues(category)
   const difficulties = cleanQueryValues(difficulty)
   const materials = cleanQueryValues(material)
-  const searchPattern = createSearchPattern(q)
+  const searchTerm = cleanText(q)
 
   addMultiValueFilter(conditions, params, 'c.c_name', 'category', categories)
   addMultiValueFilter(conditions, params, 'd.d_name', 'difficulty', difficulties)
@@ -417,38 +511,6 @@ router.get('/', (req, res) => {
           AND LOWER(m_filter.m_name) IN (${materialPlaceholders.join(', ')})
       )
     `)
-  }
-
-  if (searchPattern) {
-    conditions.push(`
-      (
-        search_normalize(p.p_title) LIKE @search ESCAPE '\\'
-        OR search_normalize(p.p_summary) LIKE @search ESCAPE '\\'
-        OR search_normalize(p.p_description) LIKE @search ESCAPE '\\'
-        OR search_normalize(c.c_name) LIKE @search ESCAPE '\\'
-        OR search_normalize(d.d_name) LIKE @search ESCAPE '\\'
-        OR search_normalize(u.u_username) LIKE @search ESCAPE '\\'
-        OR EXISTS (
-          SELECT 1
-          FROM project_materials pm_search
-          JOIN materials m_search ON m_search.m_id = pm_search.pm_m_id
-          WHERE pm_search.pm_p_id = p.p_id
-            AND (
-              search_normalize(m_search.m_name) LIKE @search ESCAPE '\\'
-              OR search_normalize(pm_search.pm_amount) LIKE @search ESCAPE '\\'
-              OR search_normalize(pm_search.pm_unit) LIKE @search ESCAPE '\\'
-              OR search_normalize(pm_search.pm_note) LIKE @search ESCAPE '\\'
-            )
-        )
-        OR EXISTS (
-          SELECT 1
-          FROM project_steps ps_search
-          WHERE ps_search.ps_p_id = p.p_id
-            AND search_normalize(ps_search.ps_text) LIKE @search ESCAPE '\\'
-        )
-      )
-    `)
-    params.search = searchPattern
   }
 
   const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''
@@ -481,9 +543,12 @@ router.get('/', (req, res) => {
       `,
     )
     .all(params)
+  const matchingRows = searchTerm
+    ? rows.filter((row) => projectMatchesSearch(row, searchTerm))
+    : rows
 
   res.json({
-    data: rows.map((row) => mapProject(row)),
+    data: matchingRows.map((row) => mapProject(row)),
   })
 })
 
