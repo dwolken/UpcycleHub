@@ -1,28 +1,26 @@
 # UpcycleHub
 
-UpcycleHub ist eine Fullstack-Webanwendung für nachhaltige Upcycling-Projekte. Die Anwendung ermöglicht es, Projektideen öffentlich zu entdecken, nach passenden Inhalten zu suchen und eigene Anleitungen nach einer Anmeldung zu erstellen und zu verwalten.
+UpcycleHub ist eine Fullstack-Webanwendung für nachhaltige Upcycling-Projekte. Gäste können Projekte öffentlich durchsuchen, filtern und ansehen. Angemeldete Benutzerinnen und Benutzer können eigene Projekte mit Bild erstellen, bearbeiten und löschen.
 
 ## Projektidee
 
-Die Idee hinter UpcycleHub ist eine Plattform, auf der aus alten oder nicht mehr genutzten Materialien neue Projekte entstehen können. Besucherinnen und Besucher können Upcycling-Ideen ansehen und sich durch Materialien, Schritte und Projektbeschreibungen inspirieren lassen. Registrierte Benutzerinnen und Benutzer können zusätzlich eigene Projekte veröffentlichen, bearbeiten und löschen.
+UpcycleHub sammelt Ideen, wie aus alten oder nicht mehr genutzten Materialien neue Gegenstände und Projekte entstehen können. Die Plattform soll Upcycling-Anleitungen auffindbar machen und es Benutzerinnen und Benutzern ermöglichen, eigene Projektideen zu veröffentlichen und zu verwalten.
 
-## Feature-Übersicht
+## Features
 
-- Öffentliche Startseite mit Branding und empfohlenen Projekten
-- Öffentliche Projektübersicht ohne Login
-- Detailseiten mit Beschreibung, Materialien, Schwierigkeitsgrad und Arbeitsschritten
-- Suche über Titel, Kurzbeschreibung, Beschreibung, Kategorie, Schwierigkeit, Autor, Materialien und Schritte
-- Einfache fehlertolerante Suche mit Fuzzy-Matching-Ansatz
-- Erweiterte Filter für Kategorie, Schwierigkeit und Materialien mit Mehrfachauswahl
-- Öffentliche Autorenseiten mit Projekten der jeweiligen Person
+- Öffentliche Homepage mit Branding
+- Empfohlene Projekte auf der Startseite
+- Projektübersicht für öffentliches Browsing
+- Projekt-Detailseiten mit Beschreibung, Materialien und Arbeitsschritten
+- Suche und erweiterte Filter für Projekte
+- Einfache fehlertolerante Suche für Tippfehler
+- Öffentliche Autorenseiten
 - Registrierung, Login und Logout
-- Sitzungsbasierte Authentifizierung mit Gastmodus
 - Bereich "Meine Projekte" für angemeldete Benutzerinnen und Benutzer
-- Projekte erstellen, inklusive Bild-Upload
-- Eigene Projekte bearbeiten und löschen
-- Schutz der Bearbeiten- und Löschen-Funktionen vor Gästen und fremden Benutzerkonten
-- Gestaltete Ladezustände, Leerzustände, Fehlerzustände und Not-Found-Seiten
-- Eigenes Logo und Favicon
+- Eigene Projekte erstellen, bearbeiten und löschen
+- Bild-Upload für Projekte
+- Schutz vor Bearbeiten und Löschen fremder Projekte
+- Ladezustände, Leerzustände, Fehlerzustände und Not-Found-Seiten
 
 ## Technologie-Stack
 
@@ -45,11 +43,60 @@ Die Idee hinter UpcycleHub ist eine Plattform, auf der aus alten oder nicht mehr
 
 ## Projektstruktur
 
-- `upcyclehub/` - React-Frontend mit Routen, Komponenten, Styling und API-Zugriffen
-- `backend/` - Express-Backend mit API-Routen, Datenbankzugriff und Middleware
-- `backend/sql/` - SQL-Dateien für Datenbankschema und Seed-Daten
-- `backend/public/images/` - lokal gespeicherte Projektbilder
+- `upcyclehub/` - React-Frontend mit Routen, Komponenten, Styles und API-Zugriffen
+- `backend/` - Express-Backend mit Server, API, Datenbankzugriff und lokaler Dateiablage
+- `backend/src/` - Backend-Quellcode mit Routen, Middleware, Datenbankmodul und Hilfsfunktionen
+- `backend/sql/` - SQL-Dateien für Schema und Seed-Daten
+- `backend/public/images/` - öffentlich bereitgestellte Projektbilder
 - `backend/data/` - lokale SQLite-Datenbankdatei
+
+## Backend-Überblick
+
+Das Backend ist ein Express-Server und läuft lokal unter `http://localhost:3000`. Es stellt die API für Authentifizierung, Projekte und Benutzer- beziehungsweise Autorenseiten bereit.
+
+Die Authentifizierung arbeitet mit Sessions über `express-session`. Nach Login oder Registrierung wird die angemeldete Person über die Session erkannt. Geschützte Projektfunktionen wie Erstellen, Bearbeiten, Löschen und "Meine Projekte" sind nur mit gültiger Anmeldung nutzbar.
+
+Projektbilder werden mit `multer` hochgeladen und im Ordner `backend/public/images/` gespeichert. Das Backend stellt diese Bilder anschließend statisch bereit, damit das Frontend sie in Projektkarten und Detailseiten anzeigen kann.
+
+## API-Überblick
+
+Wichtige API-Endpunkte:
+
+- `GET /api/projects` - Projekte abrufen, inklusive Suche und Filter
+- `GET /api/projects/:id` - einzelnes Projekt abrufen
+- `POST /api/projects` - neues Projekt erstellen
+- `PUT /api/projects/:id` - eigenes Projekt bearbeiten
+- `DELETE /api/projects/:id` - eigenes Projekt löschen
+- `GET /api/projects/mine` - eigene Projekte abrufen
+- `POST /api/auth/register` - neues Benutzerkonto registrieren
+- `POST /api/auth/login` - anmelden
+- `POST /api/auth/logout` - abmelden
+- `GET /api/auth/me` - aktuelle Session prüfen
+- `GET /api/users/:username/projects` - öffentliche Projekte eines Autors abrufen
+
+Schreibende Projekt-Endpunkte sind durch Authentifizierung geschützt. Beim Bearbeiten und Löschen prüft das Backend zusätzlich, ob das Projekt zur angemeldeten Person gehört.
+
+## Datenbank
+
+UpcycleHub verwendet SQLite als lokale Datenbank. Das Schema liegt in `backend/sql/schema.sql`, die Demo-Daten liegen in `backend/sql/seed.sql`. Die Datenbankdatei befindet sich unter `backend/data/upcyclehub.db`.
+
+Mit folgendem Befehl im Backend-Ordner wird die Datenbank neu erstellt und mit Demo-Daten befüllt:
+
+```bash
+npm run seed
+```
+
+Wichtige Tabellen:
+
+- `users`
+- `projects`
+- `categories`
+- `difficulties`
+- `materials`
+- `project_materials`
+- `project_steps`
+
+Passwörter werden nicht im Klartext gespeichert, sondern als Hashes abgelegt. Projekte gehören über eine Besitzerbeziehung zu einem Eintrag in der Tabelle `users`. Dadurch kann das Backend prüfen, ob eine angemeldete Person ein bestimmtes Projekt bearbeiten oder löschen darf.
 
 ## Setup und Installation
 
@@ -84,40 +131,21 @@ Das Frontend läuft lokal unter:
 http://localhost:5173
 ```
 
-## Datenbank
-
-UpcycleHub verwendet SQLite als lokale Datenbank. Das Datenbankschema und die Seed-Daten liegen im Ordner `backend/sql/`. Mit dem Befehl `npm run seed` im Backend-Ordner kann die Datenbank neu erstellt und mit Demo-Daten befüllt werden.
-
-Die Datei `backend/data/upcyclehub.db` enthält den lokalen, befüllten Datenbankstand für die Entwicklung und Demonstration.
-
-## Nutzung und Demo-Ablauf
+## Demo-Ablauf
 
 1. Backend und Frontend starten.
 2. `http://localhost:5173` im Browser öffnen.
-3. Auf der Startseite empfohlene Projekte ansehen.
-4. In der Projektübersicht suchen und Filter für Kategorie, Schwierigkeit oder Materialien verwenden.
-5. Eine Projekt-Detailseite öffnen und Materialien sowie Arbeitsschritte ansehen.
-6. Einen öffentlichen Autor-Link öffnen, um die Projekte dieser Person zu sehen.
-7. Ein neues Konto registrieren oder sich anmelden.
-8. Im Bereich "Meine Projekte" ein eigenes Projekt mit Bild erstellen.
-9. Das eigene Projekt bearbeiten oder löschen.
-10. Prüfen, dass fremde Projekte nicht bearbeitet oder gelöscht werden können.
+3. Projekte auf der Startseite oder in der Projektübersicht ansehen.
+4. Suche und Filter verwenden.
+5. Eine Projekt-Detailseite öffnen.
+6. Ein Benutzerkonto registrieren oder sich anmelden.
+7. Ein eigenes Projekt mit Bild erstellen.
+8. Das eigene Projekt bearbeiten oder löschen.
+9. Eine öffentliche Autorenseite öffnen.
 
-## Git-Workflow
+## Einschränkungen und mögliche Erweiterungen
 
-- `master` bleibt als sauberer Hauptstand bestehen.
-- Feature-Branches verwenden das Präfix `feature/...`.
-- Dokumentations-Branches verwenden das Präfix `docs/...`.
-- Commit-Nachrichten verwenden die Präfixe `ADD:`, `UPDATE:` oder `DELETE:`.
-- Der erste Commit des Projekts heißt `Initial Commit`.
-
-## Einsatz von KI
-
-KI wurde im Projekt unterstützend für Planung, Implementierungshilfe, Debugging und Formulierungsvorschläge eingesetzt. Die finalen Entscheidungen, Tests, Validierungsschritte und die fachliche Projektrichtung wurden vom Entwickler kontrolliert.
-
-## Aktuelle Einschränkungen und mögliche Verbesserungen
-
-- Eine Deployment-Umgebung ist nicht Bestandteil des aktuellen Projektumfangs.
-- Die Testabdeckung kann in Zukunft erweitert werden.
+- Deployment ist im aktuellen Projektumfang nicht enthalten.
+- Tests könnten erweitert werden.
 - Weitere Beispielprojekte und Inhalte könnten ergänzt werden.
-- Die Bildverarbeitung könnte später weiter verbessert werden, zum Beispiel durch zusätzliche Validierung oder automatische Optimierung.
+- Die Bildverarbeitung könnte weiter verbessert werden, zum Beispiel durch zusätzliche Validierung oder automatische Optimierung.
