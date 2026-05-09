@@ -131,6 +131,22 @@ Das Frontend läuft lokal unter:
 http://localhost:5173
 ```
 
+## Tests
+
+Backend-Tests:
+
+```bash
+cd backend
+npm test
+```
+
+Frontend-Tests:
+
+```bash
+cd upcyclehub
+npm test
+```
+
 ## Demo-Ablauf
 
 1. Backend und Frontend starten.
