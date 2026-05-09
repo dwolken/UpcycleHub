@@ -131,6 +131,28 @@ Das Frontend läuft lokal unter:
 http://localhost:5173
 ```
 
+## Tests
+
+Für Backend und Frontend sind Tests über `npm test` eingerichtet.
+
+### Backend-Tests ausführen
+
+```bash
+cd backend
+npm test
+```
+
+Die Backend-Tests decken zentrale Hilfslogik ab, zum Beispiel Suchnormalisierung, einfache Fuzzy-Suche und API-Response-Helfer.
+
+### Frontend-Tests ausführen
+
+```bash
+cd upcyclehub
+npm test
+```
+
+Die Frontend-Tests verwenden Vitest mit Testing Library und prüfen ausgewählte Komponenten sowie API-Helfer. Die Tests sind keine vollständige Abdeckung der gesamten Anwendung, sichern aber wichtige zentrale Logik ab.
+
 ## Demo-Ablauf
 
 1. Backend und Frontend starten.
